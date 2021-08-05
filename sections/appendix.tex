@@ -1,0 +1,244 @@
+\begin{appendices}
+
+\chapter{Example VTK pipeline}
+\label{apx:quadric-vtk}
+	
+\begin{cpp}[label=lst:quadricvtk,caption={Example of Quadric Contour in VTK.},aboveskip=20pt]
+#include <vtkQuadric.h>
+#include <vtkSampleFunction.h>
+#include <vtkContourFilter.h>
+#include <vtkOutlineFilter.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkProperty.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkPolyData.h>
+
+int main(int arc, char* argv)
+{
+	vtkNew<vtkQuadric> quadric;
+	quadric->SetCoefficients(.5,1,.2,0,.1,0,0,.2,0,0);
+
+	vtkNew<vtkSampleFunction> sample;
+	sample->SetSampleDimensions(200,200,200);
+	sample->SetImplicitFunction(quadric);
+
+	vtkNew<vtkContourFilter> contours;
+	contours->SetInputConnection(sample->GetOutputPort());
+	contours->GenerateValues(5,0.0,1.2);
+
+	vtkNew<vtkPolyDataMapper> contMapper;
+	contMapper->SetInputConnection(contours->GetOutputPort());
+	contMapper->SetScalarRange(0.0,1.2);
+
+	vtkNew<vtkActor> contActor;
+	contActor->SetMapper(contMapper);
+
+	vtkNew<vtkOutlineFilter> outline;
+	outline->SetInputConnection(sample->GetOutputPort());
+
+	vtkNew<vtkPolyDataMapper> outlineMapper;
+	outlineMapper->SetInputConnection(outline->GetOutputPort());
+
+	vtkNew<vtkActor> outlineActor;
+	outlineActor->SetMapper(outlineMapper);
+	outlineActor->GetProperty()->SetColor(0,0,0);
+
+	vtkNew<vtkRenderer> ren;
+	vtkNew<vtkRenderWindow> renWin;
+	renWin->AddRenderer(ren);
+
+	vtkNew<vtkRenderWindowInteractor> iren;
+	iren->SetRenderWindow(renWin);
+
+	ren->AddActor(contActor);
+	ren->AddActor(outlineActor);
+	ren->SetBackground(1,1,1);
+
+	renWin->Render();
+	iren->Start();
+
+	return EXIT_SUCCESS;
+}
+\end{cpp}
+	
+\chapter{VtkAdapterUtility code generator}
+\label{apx:generate-register}
+	
+In order to generate at before build a register of all the adapters added to the plugin, a Python script has been created to automate this process. This will generate the necessary support class used within the plugin, i.e. \verb|VtkAdapterUtility|. This class is comprised of a fixed header file and an source file that changes depending on the installed adapters. The Listing~\ref{lst:generateheader} shows the code of such script. An example of generated source file is shown in Listing~\ref{lst:vtkadapterutilityex}
+
+\begin{python}[label=lst:generateheader,caption={generate-header.py script},aboveskip=20pt]
+import os
+
+adapter_utility_h_name = "vtkAdapterUtility.h"
+adapter_utility_cpp_name = "vtkAdapterUtility.cpp"
+adapter_utility_class_name = "VtkAdapterUtility"
+adapter_utility_getter_name = "GetAdapter"
+adapter_utility_register_name = "s_adapters"
+adapter_utility_register_type = "const std::unordered_map<LPCSTR, VtkAdapter*>"
+
+adapter_utility_h = open(adapter_utility_h_name, "w")
+adapter_utility_cpp = open(adapter_utility_cpp_name, "w")
+
+
+
+### GENERATING HEADER FILE
+
+adapter_utility_h.write("#pragma once\n")
+adapter_utility_h.write("\n")
+adapter_utility_h.write("/* This file has been automatically generated through the Python header generation utility\n")
+adapter_utility_h.write(" * \n")
+adapter_utility_h.write(" * This file contains the necessary information to allow the VtkToUnity plugin to know\n")
+adapter_utility_h.write(" * that the adapters exist and it can call them. As such, this should be generated every\n")
+adapter_utility_h.write(" * time the plugin is built to avoid losing any adapters in the compilation.\n")
+adapter_utility_h.write(" */\n")
+adapter_utility_h.write("\n")
+adapter_utility_h.write("\n")
+
+adapter_utility_h.write("// Utility includes\n")
+adapter_utility_h.write("#include <unordered_map>\n")
+adapter_utility_h.write("\n")
+adapter_utility_h.write("#define NOMINMAX\n")
+adapter_utility_h.write("#include <windows.h>\n")
+adapter_utility_h.write("\n")
+adapter_utility_h.write("#include \"../Singleton.h\"\n")
+adapter_utility_h.write("#include \"../vtkAdapter.h\"\n")
+adapter_utility_h.write("\n")
+
+
+adapter_utility_h.write("\n")
+adapter_utility_h.write("\n")
+adapter_utility_h.write("// This class is used to register the adapters\n")
+adapter_utility_h.write(f"class {adapter_utility_class_name}\n")
+adapter_utility_h.write("{\n")
+
+# Generating the class for the utility operations
+
+adapter_utility_h.write("public:\n")
+
+# begin public area
+
+adapter_utility_h.write(f"\tstatic VtkAdapter* {adapter_utility_getter_name}(\n")
+adapter_utility_h.write("\t\tLPCSTR vtkAdaptedObject);\n")
+adapter_utility_h.write("\n")
+
+# end public area
+
+adapter_utility_h.write("private:\n")
+
+# begin private area
+
+adapter_utility_h.write("\t// Map with all the adapters registered in this folder\n")
+adapter_utility_h.write(f"\tstatic {adapter_utility_register_type} {adapter_utility_register_name};\n")
+
+# end private area
+
+adapter_utility_h.write("};\n")
+
+
+
+### GENERATING SOURCE FILE
+
+adapter_utility_cpp.write("/* This file has been automatically generated through the Python header generation utility\n")
+adapter_utility_cpp.write(" * \n")
+adapter_utility_cpp.write(" * This file contains the necessary information to allow the VtkToUnity plugin to know\n")
+adapter_utility_cpp.write(" * that the adapters exist and it can call them. As such, this should be generated every\n")
+adapter_utility_cpp.write(" * time the plugin is built to avoid losing any adapters in the compilation.\n")
+adapter_utility_cpp.write(" */\n")
+adapter_utility_cpp.write("\n")
+adapter_utility_cpp.write("\n")
+adapter_utility_cpp.write(f"#include \"{adapter_utility_h_name}\"\n")
+adapter_utility_cpp.write("\n")
+adapter_utility_cpp.write("// Adapters' header files found in the folder (.h and .hpp)\n")
+
+# Generating the includes of the adapters' header files
+
+classes = []
+
+for f in os.listdir("."):
+    if f != adapter_utility_h_name and ( f.endswith(".h") or f.endswith(".hpp") ):
+        adapter_utility_cpp.write(f"#include \"{f}\"\n")
+        class_name = os.path.splitext(f)[0]
+        classes.append(class_name[:1].upper() + class_name[1:])
+
+adapter_utility_cpp.write("\n")
+adapter_utility_cpp.write("\n")
+
+# Creating the adapters' mapping
+
+adapter_utility_cpp.write(f"{adapter_utility_register_type} {adapter_utility_class_name}::{adapter_utility_register_name} =");
+adapter_utility_cpp.write("{\n")
+
+# begin s_adapters init
+
+for clss in classes:    
+    adapter_utility_cpp.write(f"\t{{ Singleton<{clss}>::Instance()->GetAdaptingObject(), Singleton<{clss}>::Instance() }},\n")
+
+# end s_adapters init
+
+adapter_utility_cpp.write("};\n")
+
+adapter_utility_cpp.write("\n")
+adapter_utility_cpp.write("\n")
+
+adapter_utility_cpp.write(f"VtkAdapter* {adapter_utility_class_name}::{adapter_utility_getter_name}(\n")
+adapter_utility_cpp.write("\tLPCSTR vtkAdaptedObject)\n")
+adapter_utility_cpp.write("{\n")
+
+# begin GetAdapter
+
+adapter_utility_cpp.write("\tauto itAdapter = s_adapters.find(vtkAdaptedObject);\n")
+adapter_utility_cpp.write("\tif (itAdapter != s_adapters.end())\n")
+adapter_utility_cpp.write("\t{\n")
+adapter_utility_cpp.write("\t\treturn itAdapter->second;\n")
+adapter_utility_cpp.write("\t}\n")
+adapter_utility_cpp.write("\telse\n")
+adapter_utility_cpp.write("\t{\n")
+adapter_utility_cpp.write("\t\treturn NULL;\n")
+adapter_utility_cpp.write("\t}\n")
+
+# end GetAdapter
+
+adapter_utility_cpp.write("}\n")
+\end{python}
+    
+\begin{cpp}[label=lst:vtkadapterutilityex,caption={Example VtkAdapterUtility.cpp},aboveskip=20pt]
+/* This file has been automatically generated through the Python header generation utility
+ * 
+ * This file contains the necessary information to allow the VtkToUnity plugin to know
+ * that the adapters exist and it can call them. As such, this should be generated every
+ * time the plugin is built to avoid losing any adapters in the compilation.
+ */
+
+
+#include "vtkAdapterUtility.h"
+
+// Adapters' header files found in the folder (.h and .hpp)
+#include "vtkConeSourceAdapter.h"
+
+
+const std::unordered_map<LPCSTR, VtkAdapter*> VtkAdapterUtility::s_adapters ={
+	{ Singleton<VtkConeSourceAdapter>::Instance()->GetAdaptingObject(), Singleton<VtkConeSourceAdapter>::Instance() },
+};
+
+
+VtkAdapter* VtkAdapterUtility::GetAdapter(
+	LPCSTR vtkAdaptedObject)
+{
+	auto itAdapter = s_adapters.find(vtkAdaptedObject);
+	if (itAdapter != s_adapters.end())
+	{
+		return itAdapter->second;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+\end{cpp}
+    
+\end{appendices}

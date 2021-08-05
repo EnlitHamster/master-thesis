@@ -1,0 +1,79 @@
+\chapter{Introduction}
+\label{ch:introduction}
+%% Context: what is the bigger scope of the problem you are trying to solve? Try to connect to societal/economical challenges.
+%% Problem Analysis: Here you present your analysis of the problem situation that your research will address.
+%% How does this problem manifest itself at your host organisation?
+%% Also summarises existing scientific insight into the problem.
+
+
+\acrfull{vr} offers great opportunities when it comes to visualizing information and applications that enables students, practitioners and researchers to better understand and manipulate data. In particular, its advantage over classic screens are its capacity of creating fully interactive and immersive environments, as well as leverage the human innate spatial comprehension and interaction capabilities \cite{belleman_interactive_2003}. These make \acrshort{vr} suited for all applications where interaction and immersion are critical, ranging from educational \cite{hussein_benefits_2015} to medical \cite{faria_benefits_2016, chen_psychological_2009} purposes. Another important aspect of \acrshort{vr} that arises directly from its interactive and immersive environments, is that it has good support for activities that require the user to stay active, such as learning \cite{hussein_benefits_2015}.
+
+To aid creating visualizations, both for \acrshort{vr} and not, a number of toolkits and frameworks exist. Focusing on scientific visualization, toolkits such as \acrfull{vtk}, a powerful and extensive open source toolkit for (3D) visualization, is a widely known and used library which is based on the creation of visualization pipelines \cite{schroeder_visualization_2006}, and \acrfull{itk} \cite{mccormick_itk_2014} offer libraries in a variety of programming languages focused on creating visualization for different purposes. Examples are volume rendering \cite{wheeler_virtual_2018, drebin_volume_1988} for medical and engineering purposes and parallel model computation and rendering \cite{dutra_distributed_2007}. As such, these toolkits become also an important resource for \acrshort{vr} environments' development \cite{wheeler_virtual_2018}.
+
+A number of tools already exist for development with these libraries: environments such as ParaView\footnote{\url{https://www.paraview.org/}}, MeVisLab\footnote{\url{https://www.mevislab.de/}} and \acrfull{devide} \cite{botha_devide_2004} integrate either one or the other or both and more of these toolkits. Even though some integration exists for \acrshort{vr} development \cite{sua_virtual_2015, shetty_immersive_2011}, these fall short of making use of the powerful capabilities of \acrshort{vr} and are only portings. These still require the user to jump in and out of the environment to make adjustments at the desktop workstation and can be both wasteful in time and break workflow \cite{belleman_interactive_2003, dreuning_visual_2016, kruis_creating_2017, shutte_virtual_2018}. Coupled with the fact that development of good visualizations is an iterative process, requiring the developer to tweak the pipeline multiple times over, it makes for an inefficient process at best.
+
+This thesis proposes a way of integrating these toolkits, in particular focusing on \acrshort{vtk}, with general purpose \acrshort{vr} applications development environments, both lowering the technical barrier of using these toolkits and their restrictions when it comes to \acrshort{vr}, as well as making use of the capabilities this technology has to offer. To achieve this, we look at previous attempts with this toolkit and its existing environments \cite{dreuning_visual_2016, kruis_creating_2017, shutte_virtual_2018}, other environments \cite{wheeler_virtual_2018} and similar specific \acrshort{vr} development environments \cite{vanhorn_deep_2019}.
+
+We develop a \acrshort{vr} pipeline development environment inspired by ParaView desktop's approach, where the user will be able to both edit and render the visualization without exiting the VR environment and using an intuitive block-based editor to create the pipeline. More specifically, we will develop an integration between the \acrshort{vtk} library and Unity, a general purpose game engine \cite{haas2014history}, that will be used for the generation of the virtual world, as well as handling the UI components that allow editing of the \acrshort{vtk} objects.
+
+\section{Problem statement}
+
+Creation of \acrshort{vr} visualizations in particular is, to this day, cumbersome, requiring the user to mostly work from a desktop screen, which is not ideal to design a \acrshort{vr} visualization, due to its different nature. Another big issue is the fact that to move between testing and usage station, i.e. the \acrshort{vr} headset, and the (desktop) development station, is a non-trivial job that is time consuming at best, and at worst a factor slowing down and degrading the development process. Creating such an environment represents an important step for the visualization community, removing barriers for \acrshort{vr} development, and a challenge from a Software Engineering stand point. Furthermore, from a research perspective a number of questions open up which are not yet fully explored.
+
+A key characteristic of any good \acrshort{vr} environment is performance: in order to have a decent user experience, and limit the influences of motion sickness and other problems that arise from poorly designed \acrshort{vr} environments \cite{viire1997health}, the software needs to reach high performance thresholds. Guidelines for general applications for \acrshort{vr} suggest to achieve a framerate of at least 90 FPS \cite{noauthor_vr_nodate-1}, but depending on the headset even higher framerates may be needed, i.e. with newer versions of the Valve Index or the Pimax 5K plus. Considering that a \acrshort{vr} \acrfull{hmd} is made of two displays, one per eye, the target FPS is double the suggested threshold, posing serious design challenges.
+
+\subsection{Research questions}
+
+Designing an environment as the one we describe opens up a number of questions, especially what are the challenges with it its maintainability, as it involves connecting two third-party code bases. We investigate similar works in order to fully develop a stable core of the environment we envision. A very first step has already been accomplished by finding ways to embed visualization libraries in visualization engines that will be the base of our environment. Examples of this are Activiz \cite{kitware_activiz} and Wheeler et al.'s VtkToUnity \cite{wheeler_virtual_2018}, both interfacing \acrshort{vtk} with Unity.
+
+These solutions though aim not at creating development environments, but are oriented at supporting the development of specific applications. For example ActiViz is a commercial tool which has performance limits due to its use of copying operations from CPU to GPU \cite{gregg2011data}, whereas Wheeler et al.'s VtkToUnity, part of the 3DHeart project \cite{wheeler_virtual_2018}, lacks generality, as \acrshort{vtk} is called through specialized code and only the \acrshort{vtk} feature needed are actually visible from Unity.
+
+\begin{itemize}[leftmargin=1.5truecm]
+    \item[\textbf{RQ1}] In what way can interfacing \acrlong{vtk} with Unity Game Engine be done such that \acrshort{vr} usability and performance standards are upheld?
+\end{itemize}
+
+By fully interfacing the toolkit with the game engine we intend that the engine has full access to the capabilities of \acrshort{vtk}, while this last one is able to capture events arising within the environment. From previous attempts at achieving this \cite{dreuning_visual_2016, kruis_creating_2017, shutte_virtual_2018, wheeler_virtual_2018}, we found that a major issue comes from using different versions of the involved libraries, which were not always traceable back to a simple API change. As such, our intent is to investigate what factors contribute to this instability and how we can limit their impact on the solution.
+
+\begin{itemize}[leftmargin=1.5truecm]
+    \item[\textbf{RQ2}] What are the factors contributing to maintainability issues of interfacing \acrlong{vtk} and Unity Game Engine?
+    \begin{itemize}[leftmargin=1.5truecm]
+        \item[\textbf{RQ2.1}] How can the impact of these factors on the maintainability of the system be limited?
+    \end{itemize}
+\end{itemize}
+
+Finally, as UI and \acrshort{ux} are out of the scope of this thesis, yet important to our successful investigation of the aforementioned research questions, thus they will be investigates alongside this thesis project by someone else. Due to the constraints on a work such as a Master's Thesis, we will report on the difficulties of such a Software development Process.
+
+\subsection{Research method}
+
+In order to investigate our research questions, we design a software system based on precedent work. The design will be guided by three main principles which reflect the constraints we put in our research questions:
+
+\begin{enumerate}
+    \item \textbf{Integration}: the two main components of the system we will develop already exist, \acrshort{vtk} and Unity. A link between the two exists, but is imperfect, and does not allow the capabilities of both to be fully leveraged in the end system. This may be sufficient for some applications, but where a full interfacing of the two is necessary, the existing approaches require a great development overhead. Our objective is to reduce this overhead by maximizing the integration between these two components;
+    
+    \item \textbf{Performance}: a key problem with \acrshort{vr} applications is achieving the performances that are sufficient for a decent user experience. A number of guidelines exist on what these performances should be in terms of \acrfull{fps} \cite{noauthor_vr_nodate-1, noauthor_virtual_nodate}. As we set out to create a usable \acrshort{ide} that should be usable by users to create their visualizations within a \acrshort{vr} environment, we have the objective of achieving an average \acrshort{fps} count of the recommended values for the game engine we select. Another critical aspect of performance is response time: queries and operations on the pipeline have to be executed as fast as possible to avoid rendering issues and long waiting periods.
+    
+    \item \textbf{Maintainability}: as previously expressed, one of our main concerns is maintainability. Due to the nature of the system we will develop, our concern is to maximize its maintainability for long term support. We will first and foremost investigate which factors contribute to hardly maintainable solutions and we will then discuss how we can limit them.
+\end{enumerate}
+
+Given these drivers, and our goal of creating a long-lasting \acrshort{ide} that would enhance the quality of life of the \acrshort{vr} visualization development community. Our first concern will be to investigate the factors contributing to the maintainability issues of previous solutions proposed by performing a small literature review, collecting a number of previous solutions, and examining them to find out their weak spots. We compile a list of these factors and how much they impact the system, how easily they can be avoided or solved and what components they involve.
+
+Based on the results of this first part, we design an architecture with the objective of minimizing the factors impacting maintainability. At this stage, we also focus on laying the grounds of a performing system, and as such we discuss a number of design choices, potentially based on architectures from different strands of Computer Sciences. We attempt to keep the concerns as separate and encapsulated as possible with the intent of enabling the software to be distributed.
+
+Finally, we develop a proof of concept that we test for performance on a number of visualizations on three main operations: creation of the visualization, rendering of the visualization and a combination of the two. We then compare the results of our benchmarks with the guidelines provided by the developer of Unity and/or manufacturer of the \acrshort{vr} headset we choose, as well as with the results of previous research on this topic \cite{dreuning_visual_2016, wheeler_virtual_2018}.
+
+Alongside this main research journey, we will also collect, in the form of Action-Research, a diary of the difficulties we encountered in researching, designing and implementing the software, as well as managing the two different development branches that are to be highly decoupled. Based on our experience, we discuss what were the weak points of our approach and what are in hindsight potential precautions and solutions we could have taken to enhance productivity and success chances.
+
+\section{Contributions}
+
+Our research makes the following contributions:
+
+\begin{enumerate}
+	\item Analysis of the factors contributing to the unmaintainability of software bridging \acrshort{vtk} and Unity,
+	\item Development of a potentially distributed architecture for performing \acrshort{vr} visualization creation and rendering systems,
+	\item Insight into the preparation, development and management of software where developers work on depending components with the constraint of having decoupled work.
+\end{enumerate}
+
+\section{Outline}
+
+In Chapter~\ref{ch:background} we describe the background of this thesis and analyse previous work researching factors contributing to maintainability issues of this kind of software. Chapter~\ref{ch:design} describes the design challenges and choices of the system. Chapter~\ref{ch:unmaintainability} describes the development of an architecture able to support the performance required by our software while meeting its requirements. Results of the literature review, development, testing and benchmarking are shown in Chapter~\ref{ch:results} and discussed in Chapter~\ref{ch:discussion}. Chapter~\ref{ch:related_work}, contains the work related to this thesis. Finally, we present our concluding remarks in Chapter~\ref{ch:conclusion} together with future work.
+
