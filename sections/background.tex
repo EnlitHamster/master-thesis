@@ -19,9 +19,9 @@ We define a set of terms that we use throughout this thesis. We use the \textit{
 
 \section{The Visualization Toolkit}
 
-As the necessity to produce ever more complex visualizations grows, both in commercial and scientific settings, a number of visualization toolkits have been developed to support the development of these visualizations. These libraries tend to specialize on some form of visualization; for example, \acrfull{vtk} focuses on scientific visualization \cite{kruis_creating_2017} and \acrfull{itk} on image analysis \cite{yoo_engineering_2002}.
+As the necessity to produce ever more complex visualizations grows, both in commercial and scientific settings, a number of visualization toolkits have been developed to support the development of these visualizations. These libraries tend to specialize on some form of visualization; for example, \acrfull{vtk} focuses on scientific visualization \cite{kruis_creating_2017}.
 
-These toolkits come in a variety of flavours, languages and/or wrappings and it is thus out of the scope of this thesis to analyse and develop upon all of them. We will discuss research done on all three to create \acrshort{ide}s for or within \acrshort{vr} environments, but we will ultimately choose to use for a proof of concept. For this discussion, we will take into consideration the three aforementioned libraries.
+These toolkits come in a variety of flavours, languages and/or wrappings and it is thus out of the scope of this thesis to analyse and develop upon all of them. We will discuss research done on all three to create \acrshort{ide}s for or within \acrshort{vr} environments, but we will ultimately choose to use for a proof of concept.
 
 \acrfull{vtk} is a library oriented towards \blockquote{manipulating and displaying scientific data}\footnote{\url{https://vtk.org/}}. It creates visualizations by means of filter pipelines, a technique proposed by Haber and McNabb \cite{haber1990visualization}. These filters manipulate input data through some set of transformations and return the composed data which can then be visualized. 
 
@@ -60,11 +60,13 @@ A number of projects already attempted interfacing visualization libraries with 
 
 \paragraph{OculusVTK Visual editor}
 
-In 2016 a similar attempt to create a visual editor for OculusVTK was carried out in Python in a stand \cite{dreuning_visual_2016}. The solution allowed the user to create simple pipelines and manipulate them within a visual environment and see the result of the operations. The authors carry out a number of experiments with pipelines, varying from simple arrows to stream tracers and a DICOM image rendering, where results showed a consistent 58-60 FPS were achieved.
+In 2016 a similar attempt to create a visual editor for OculusVTK was carried out in Python \cite{dreuning_visual_2016}. The solution allowed the user to create simple pipelines and manipulate them within a visual environment and see the result of the operations. The authors carry out a number of experiments with pipelines, varying from simple arrows to stream tracers and a DICOM image rendering, where results showed a consistent 58-60 FPS were achieved.
 
 While the objectives of the authors are quite similar to ours, they do not focus on the same constraints we set for our project, i.e. performance and the designing of a distributable and parallelizable architecture. Furthermore, their solution focuses on Oculus, whereas our solution aims at being headset-agnostic.
 
 The power of the solution proposed lays in its usage of Python's capability of introspecting on its modules and harvesting data in order to achieve a more general approach to interfacing with \acrshort{vtk}. We base our solution partly on this software, as we will discuss in Section~\ref{sec:design-introspection}.
+
+On the other hand, this solution is limited to the usage of the OculusVTK C++ boilerplate for OculusVR. The code is 
 
 \paragraph{VtkToUnity}
 
