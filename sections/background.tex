@@ -1,7 +1,7 @@
 \chapter{Background}
 \label{ch:background}
 
-This chapter presents the necessary background information for this thesis. First, we define some basic terminology that we use throughout this thesis. Next, we research prior work in the field of \acrshort{vr} that interfaces \acrshort{vtk} and Unity or develops \acrshort{ide}s for visualizations within a \acrshort{vr} environment. We also examine the software and solutions produced by these previous studies and extract which factors contribute to potential maintainability issues and which on the contrary make them more maintainable. 
+This chapter presents the necessary background information for this thesis. First, we define some basic terminology that we will use throughout this document. Next, we research prior work in the field of \acrshort{vr} that interfaces \acrshort{vtk} and Unity or develops \acrshort{ide}s for visualizations within a \acrshort{vr} environment. We also examine the software and solutions produced by these previous studies and extract which factors contribute to potential maintainability issues and which on the contrary make them more maintainable. 
 
 \section{Terminology}
 
@@ -9,9 +9,9 @@ We define a set of terms that we use throughout this thesis. We use the \textit{
 
 \begin{itemize}[leftmargin=1.5truecm]
     \setlength{\itemindent}{-1truecm}
-    \item[] \textbf{\acrfull{vr}} A computer system used to create an artificial world which is immersive and interactive for the user \cite{manetta1995glossary}.
-    \item[] \textbf{Immersion} The feeling of the user of being part of a virtual environment \cite{manetta1995glossary}.
-    \item[] \textbf{Virtual Environment} Realistic simulations of interactive scenes \cite{manetta1995glossary}.
+    \item[] \textbf{\acrfull{vr}} A computer system used to create an artificial world which is immersive and interactive for the user.
+    \item[] \textbf{Immersion} The feeling of the user of being part of a virtual environment.
+    \item[] \textbf{Virtual Environment} Realistic simulations of interactive scenes.
     \item[] \textbf{Interactivity} The ability of the user to navigate and manipulate (objects in) the environment.
     \item[] \textbf{Visualization Toolkit} Library containing functionality aimed at creating and manipulating data visualizations.
     \item[] \textbf{Game Engine} A software that enables the creation of virtual environments.
@@ -23,7 +23,7 @@ As the necessity to produce ever more complex visualizations grows, both in comm
 
 These toolkits come in a variety of flavours, languages and/or wrappings and it is thus out of the scope of this thesis to analyse and develop upon all of them. We will discuss research done on all three to create \acrshort{ide}s for or within \acrshort{vr} environments, but we will ultimately choose to use for a proof of concept.
 
-\acrfull{vtk} is a library oriented towards \blockquote{manipulating and displaying scientific data}\footnote{\url{https://vtk.org/}}. It creates visualizations by means of filter pipelines, a technique proposed by Haber and McNabb \cite{haber1990visualization}. These filters manipulate input data through some set of transformations and return the composed data which can then be visualized. 
+\acrfull{vtk} is a library oriented towards \blockquote{\textit{manipulating and displaying scientific data}}\footnote{\url{https://vtk.org/}}. It creates visualizations by means of filter pipelines, a technique proposed by Haber and McNabb \cite{haber1990visualization}. These filters manipulate input data through some set of transformations and return the composed data which can then be visualized. 
 
 \acrshort{vtk} has three different stages of the pipeline which combined return a visualization rendering. The first stage is the generation or the import of a data source and transforming the raw data in some more readable raw data if needed, like structuring it in a model. Subsequently, the raw data is then transformed through filters that compose the data in order for it to be visualized, creating the actual visualization. Finally, the visualization is rendered through the application of mappers that transform the computational representation into a graphical representation. An example of a Quadric 3D function is shown in Figure~\ref{fig:quadric-render-pipeline}, based on an example proposed in the \acrshort{vtk} example repository\footnote{Available at \url{https://kitware.github.io/vtk-examples/site/Cxx/VisualizationAlgorithms/ContourQuadric/}.}, the exact code is presented in Appendix~\ref{apx:quadric-vtk}.
 
@@ -46,7 +46,7 @@ Upon \acrshort{vtk}, a number of wrappers have been produced, allowing the libra
 
 \section{Game Engines}
 
-Game Engines can be defined as \textit{software frameworks for game development} \cite{politowski2021game}. These frameworks though are not all equal, and as such we focus on those defined as \textit{\acrfull{gpge}s}, which we define as \textit{frameworks for the creation of virtual environments}, which is a fundamental component of games. This also means that these softwares are not restricted to game development purposes, but are used for a variety of projects that entail the simulation of virtual worlds. These frameworks perfectly fit our requirement of creating an immersive and interactive environment for our \acrshort{vr} IDE.
+Game Engines can be defined as "\textit{software frameworks for game development}" \cite{politowski2021game}. These frameworks though are not all equal, and as such we focus on those defined as \textit{\acrfull{gpge}s}, which we define as \textit{frameworks for the creation of virtual environments}, which is a fundamental component of games. This also means that these softwares are not restricted to game development purposes, but are used for a variety of projects that entail the simulation of virtual worlds. These frameworks perfectly fit our requirement of creating an immersive and interactive environment for our \acrshort{vr} IDE.
 
 A number of \acrshort{gpge}s exist, such as Unity Engine \cite{haas2014history} and Unreal Engine \cite{unrealengine}. We will be using Unity as the engine on which we base our solution. This is ideal for our research as previous research already exists discussing the integration of \acrshort{vtk} and this engine \cite{wheeler_virtual_2018}. Furthermore, it is a very well established, used and supported engine.
 
@@ -55,6 +55,7 @@ We chose to use Unity due to the number of advantages that come with the engine.
 The documentation for the engine is comprehensive and freely available with a number of examples that facilitate development, and its API supports the implementation of custom native C++ code through easy drag-n-drop of the shared libraries in the editor and an intuitive interface to import its functionalities in C\#. Finally, thanks to OpenGL 2 context sharing, it is possible to render through external code, such as \acrshort{vtk}, which suites our need to visualize objects created in native C++ libraries.
 
 \section{Related Work}
+\label{sec:related-work}
 
 A number of projects already attempted interfacing visualization libraries with frameworks, be it \acrshort{gpge}s or IDEs, while others attempted the creation of visualization editors, albeit for different purposes and/or constraints. In this section we will discuss these previous attempts and how they contribute to laying the ground for our development.
 
@@ -66,11 +67,15 @@ While the objectives of the authors are quite similar to ours, they do not focus
 
 The power of the solution proposed lays in its usage of Python's capability of introspecting on its modules and harvesting data in order to achieve a more general approach to interfacing with \acrshort{vtk}. We base our solution partly on this software, as we will discuss in Section~\ref{sec:design-introspection}.
 
-On the other hand, this solution is limited to the usage of the OculusVTK C++ boilerplate for OculusVR. The code is 
+% Cannot find any reference of OculusVTK outside of one SURFsara webpage and Dreuning's and Perlee's theses.
+On the other hand, this solution is limited to the usage of the OculusVTK C++ boilerplate for OculusVR. The code is maintained by SURFsara and offers an extension of the OculusVR SDK for Oculus HMDs. Compared to the support of Unity, this limits the generality of the solution, which we aim at extending.
 
-\paragraph{VtkToUnity}
+Also due to the usage of OculusVTK, the solution proposes a complex building system prone to errors and issues related to building platforms, versions and library installations. Our objective is to streamline the building of our solution, if any is needed, and make our solution version-agnostic towards its dependencies. 
 
-The closest attempt to our project was presented in 2018 by Wheeler et al. who developed a Native Unity plugin that allowed the user to exploit \acrshort{vtk}'s features in the engine's scripts\footnote{\url{https://gitlab.com/3dheart_public/vtktounity}}. The plugin's aim is to introduce volume rendering through \acrshort{vtk} and uses the OpenGL context sharing technology to enable the visualization library to directly render within the Unity scene. The plugin's approach is to add a rendering callback function after the transparency rendering stage, as optimal for volume rendering. The produced architecture is summarized in Figure~\ref{fig:wheeler-architecture} \cite{wheeler_virtual_2018}.
+Furthermore, the Python scripts are limited to only working through introspection on \verb|vtkAlgorithm| subclasses, which limits the user to using such powerful tool on a subset of all available features of VTK. We aim at a general solution, thus either extending the approach up to any \verb|vtkObjectBase| subclass or to allow access to other features through the offered API.
+
+\paragraph{VtkToUnity} is the closest attempt to our project was presented in 2018 by Wheeler et al. \\
+\cite{wheeler_virtual_2018}. who developed a Native Unity plugin that allowed the user to exploit \acrshort{vtk}'s features in the engine's scripts\footnote{\url{https://gitlab.com/3dheart_public/vtktounity}}. The plugin's aim is to introduce volume rendering through \acrshort{vtk} and uses the OpenGL context sharing technology to enable the visualization library to directly render within the Unity scene. The plugin's approach is to add a rendering callback function after the transparency rendering stage, as optimal for volume rendering. The produced architecture is summarized in Figure~\ref{fig:wheeler-architecture} 
 
 \begin{figure}
     \centering
@@ -81,14 +86,16 @@ The closest attempt to our project was presented in 2018 by Wheeler et al. who d
 
 The authors carry out experiments to evaluate the performances of the solution. Their objective frame rate is of 90 FPS using a HTC Vive \acrfull{hmd}, which aligns with Unity's own guidelines \cite{noauthor_vr_nodate-1} as well as the 90Hz refresh rate of the \acrshort{hmd} \cite{BuyVIVEH54}. With simpler renderings the solution is of its own able to achieve the desired frame rate, but with more complex scenes it does not. To overcome this, the authors propose the usage of setting the desired frame rate using \acrshort{vtk}'s own \verb|vtkExternalRenderingOpenGLRenderWindow::SetDesiredUpdateRate| to solve this.
 
-This solution presents some limitations, as the C++ native code locks the shared API at every call, and as such limits the ability to leverage parallelization of the software, which could potentially aid the rendering quality while the objective frame rate is set. Furthermore, the plugin focuses on volume rendering in particular, while our solution aims at a more general solution. 
+This solution presents some limitations, as the C++ native code locks the shared API at every call, and as such limits the ability to leverage parallelization of the software, which could potentially aid the rendering quality while the objective frame rate is set. Furthermore, the plugin focuses on volume rendering in particular, while our solution aims at a more general solution.
 
-\paragraph{ActiViz}
+An issue with the maintainability of the VtkToUnity plugin is its hardcoding of features and reliance on patches to \acrshort{vtk}'s code to make it work correctly. For a specific application this is not a problem, but as our objective is to offer a generic solution to access VTK from Unity, this is not viable, as it introduces couplings to versions and particular algorithms and pipelines, and the potential for bugs and clones.
 
-Kitware, the company also maintaining \acrshort{vtk}, have created a wrapper for .NET of \acrshort{vtk}, ActiViz\footnote{\url{https://www.kitware.eu/activiz/}}. This wrapper is ready to be used with Unity, and exposes the same functionality of the library as other wrappers. This allows already for a good integration of the library and Unity.
+Our solution aims at creating a bridge that would allow the user to create pipelines in Unity without having hardcoded features limiting the user capabilities.
 
-The downside of this solution is its performance: as the wrapper requires CPU to GPU copies, with complex visualizations the performances drop significantly. This has already been discussed by Wheeler et al. \cite{wheeler_virtual_2018} and is one of the reasons that lead them to develop their own solution. 
+\paragraph{ActiViz}\footnote{\url{https://www.kitware.eu/activiz/}} is a \acrshort{vtk} wrapper for .NET, developed by Kitware, the company that is also mantaining \acrshort{vtk}. This wrapper is ready to be used with Unity, and exposes the same functionality of the library as other wrappers. This allows already for a good integration of the library and Unity.
 
-\paragraph{ParaView}
+The downside of this solution is its performance: as the wrapper requires CPU to GPU copies, with complex visualizations the performances drop significantly. This has already been discussed by Wheeler et al. \cite{wheeler_virtual_2018} and is one of the reasons that lead them to develop their own solution. On the other side, this is an official wrapper maitained by Kitware, the same creators of \acrshort{vtk}, and it has already an integration for Unity.
 
-Again developed by Kitware, Paraview\footnote{\url{https://www.paraview.org/}} is an \acrshort{ide} for the creation of visualizations mainly based on \acrshort{vtk}. This uses the same paradigm as \acrshort{vtk} for the creation of visualizations, that is by the means of pipelines. The software supports a \acrshort{vr} porting for the visualizations which feels clunky, as it is a rendering of 2D UIs in a 3D immersive and interactive environment, which hinders user experience.
+\paragraph{ParaView} \footnote{\url{https://www.paraview.org/}} is an \acrshort{ide} for the creation of visualizations mainly based on \acrshort{vtk}, also developed by Kitware. This uses the same paradigm as \acrshort{vtk} for the creation of visualizations, that is by the means of pipelines. The software supports a \acrshort{vr} porting for the visualizations which feels clunky, as it is a rendering of 2D UIs in a 3D immersive and interactive environment, which hinders user experience.
+
+Of the previous solutions, only Dreuning's work addresses the issue of allowing the creation of an integrated development environment in \acrshort{vr}. This is not an issue in and of itself, but it makes for a cumbersome and time consuming development environment for \acrshort{vr} applications. The solutions all miss one of the key characteristics we envision for our environment, be it the performances necessary for \acrshort{vr} applications, the generality of an \acrshort{ide} or the support for multiple \acrshort{hmd}s.
