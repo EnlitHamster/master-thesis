@@ -1,0 +1,17 @@
+reader_inst, 0.00025479999999999947
+reader_setfile, 6.200000000011752e-06
+reader_update, 0.5320392
+seeds_inst, 4.8200000000053755e-05
+seeds_setradius, 4.699999999968618e-06
+seeds_setcenter_reader_getoutput_getcenter, 7.5999999999964984e-06
+seeds_setnumberofpoints, 2.699999999911107e-06
+streamer_inst, 3.239999999993248e-05
+streamer_setinputconn_reader_getoutputport, 1.2399999999912481e-05
+streamer_setsourceconn_seeds_getoutputport, 6.599999999967743e-06
+streamer_setmaxpropagation, 7.5999999999964984e-06
+streamer_setinitialintegstep, 1.8999999999991246e-06
+streamer_setintegdirboth, 1.8999999999991246e-06
+outline_inst, 1.4900000000039881e-05
+outline_setinputconn_reader_getoutputport, 6.100000000008876e-06
+main, 0.53291
+frame_cycles, 49
