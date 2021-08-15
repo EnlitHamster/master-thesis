@@ -27,7 +27,7 @@ These toolkits come in a variety of flavours, languages and/or wrappings and it 
 
 \acrshort{vtk} has three different stages of the pipeline which combined return a visualization rendering. The first stage is the generation or the import of a data source and transforming the raw data in some more readable raw data if needed, like structuring it in a model. Subsequently, the raw data is then transformed through filters that compose the data in order for it to be visualized, creating the actual visualization. Finally, the visualization is rendered through the application of mappers that transform the computational representation into a graphical representation. An example of a Quadric 3D function is shown in Figure~\ref{fig:quadric-render-pipeline}, based on an example proposed in the \acrshort{vtk} example repository\footnote{Available at \url{https://kitware.github.io/vtk-examples/site/Cxx/VisualizationAlgorithms/ContourQuadric/}.}, the exact code is presented in Appendix~\ref{apx:quadric-vtk}.
 
-\begin{figure}
+\begin{figure}[ht!]
     \centering
     \begin{subfigure}{\textwidth}
         \centering
@@ -77,7 +77,7 @@ Furthermore, the Python scripts are limited to only working through introspectio
 \paragraph{VtkToUnity} is the closest attempt to our project was presented in 2018 by Wheeler et al. \\
 \cite{wheeler_virtual_2018}. who developed a Native Unity plugin that allowed the user to exploit \acrshort{vtk}'s features in the engine's scripts\footnote{\url{https://gitlab.com/3dheart_public/vtktounity}}. The plugin's aim is to introduce volume rendering through \acrshort{vtk} and uses the OpenGL context sharing technology to enable the visualization library to directly render within the Unity scene. The plugin's approach is to add a rendering callback function after the transparency rendering stage, as optimal for volume rendering. The produced architecture is summarized in Figure~\ref{fig:wheeler-architecture} 
 
-\begin{figure}
+\begin{figure}[ht!]
     \centering
     \includegraphics[width=\textwidth]{pictures/wheeler_arch.PNG}
     \caption{Wheeler et al.'s rendering architecture.}

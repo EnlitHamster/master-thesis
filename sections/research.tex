@@ -30,7 +30,7 @@ The application we run is a stream tracer of a density dataset for \acrshort{vtk
 \end{figure}
 
 
-\begin{table}[]
+\begin{table}[ht!]
     \centering
     \begin{tabular}{lllll}
     \hline
@@ -101,7 +101,7 @@ As we are taking a similar approach to Wheeler et al.'s, we also follow their so
 
 We use as base for our software Wheeler's VtkToUnity plugin, as such we use the same system they developed for sharing data between rendering context and for integrating the event loops of Unity and \acrshort{vtk}. This second issue was also tackled by Wheeler et al. by nesting the \acrshort{vtk} event loop iteration in Unity's using the engine's event queue event handlers and graphics callbacks \cite{wheeler_virtual_2018}. The obtained architecture for the plugin is shwon in Figure~\ref{fig:wheeler-architecture}. Most of the functionality handling these loops is implemented in the C\# scripts of Unity, which call the correct native function from the plugin in order to trigger the corresponding event in \acrshort{vtk}. A zoom in of the architectural specification can be seen in Figure~\ref{fig:wheeler-architecture-zoomin} where the particular calls from the scripts is highlighted and what is called in \acrshort{vtk} as a consequence for a particular Unity scene developed by Wheeler et al. \cite{wheeler_virtual_2018}.
 
-\begin{figure}
+\begin{figure}[ht!]
     \centering
     \includegraphics[width=\textwidth]{pictures/wheeler_architecture_zoomin.jpg}
     \caption{Wheeler et al.'s script handling of the VTK event loop.}
