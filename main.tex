@@ -1,6 +1,7 @@
 \documentclass[a4paper,10pt,titlepage]{report}
 %%This template is based on Paco van Beckhoven's thesis. 
 
+\usepackage{tabulary}
 \usepackage{xspace}
 \usepackage{xargs}   % Use more than one optional parameter in a new commands
 \usepackage[pdftex,dvipsnames]{xcolor}
@@ -56,6 +57,7 @@
 \usepackage[titletoc]{appendix}
 
 
+\usepackage{hhline}
 
 
 %for highlighting findings
@@ -81,12 +83,6 @@
 
 \newcommandx{\lessprio}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
 \newcommandx{\todocontent}[2][1=]{\todo[author=\textbf{Planned content},backgroundcolor=Goldenrod!25,bordercolor=Goldenrod,inline,#1]{#2}}
-
-
-%%Some additional table column specifiers, allowing for fixed width columns that wrap.
-\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
-\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
-\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
 
 \definecolor{ryel}{HTML}{fcd116}
 \definecolor{rred}{HTML}{ce1126}
@@ -221,8 +217,8 @@
     showstringspaces=false,
     basicstyle=\footnotesize,
     emphstyle=\bfseries,    % Custom highlighting style
-    morekeywords={self},              % Add keywords here
-    emph={os,__init__},          % Custom highlighting
+    morekeywords={self},    % Add keywords here
+    emph={os,__init__},     % Custom highlighting
 }}
 
 % Output style for highlighting
