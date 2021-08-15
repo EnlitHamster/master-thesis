@@ -1,22 +1,24 @@
-\chapter{Design \& Implementation}
+\chapter{Design}
 \label{ch:design}
 
-This chapter will present the challenges encountered creating the system, what the most critical components are and the choices we made to overcome said issues. We will first present the components that will build up the system, what their responsibility are and the choices that lead us to such a division. Then tackle each component one by one, focusing separately on each challenge. Afterwards we will combine all the choices and present the final architecture of the system developed.
+This chapter introduces the design choices implemented in our solution in order to overcome the challenges presented in Chapter~\ref{ch:unmaintainability}. We also discuss the implementation of the most critical aspects of these solution. We do not discuss the \acrshort{ui} implementation as it is out of the scope of this thesis. However, we will still discuss its design as it is part of the architecture we present and tackles some important points that make this an interesting issue.
+
+%This chapter presents the challenges encountered creating the system, what the most critical components are and the choices we made to overcome said issues. We first present the components that build up the system, what their responsibility are and the choices that lead us to this design. Then tackle each component one by one, focusing separately on each challenge. Afterwards we combine all the choices and present the final architecture of the system developed.
 
 \section{Components}
 \label{sec:components}
 
-From previous work, the main challenges we expect to face are mainly related to the maintainability of the software and its stability. A further complexity factor to the design is the importance of allowing the system to leverage the full power of \acrshort{vtk}. As such, we opt for an architecture with components that each have a precise separate concern \cite{Hursch95separationof}. This choice stems from maintainability concerns arising from previous work's code, where components were highly coupled with both the visualization library and the engine \cite{dreuning_visual_2016, duking_potential_2018, kruis_creating_2017, wheeler_virtual_2018}.
+Based on our discussion of the challenges in Chapter~\ref{ch:unmaintainability}, we opt for an architecture with components that each have a precise separate concern \cite{Hursch95separationof}. This stems from maintainability driven considerations arising from previous work's code, where components were highly coupled with both the visualization library and the engine \cite{dreuning_visual_2016, duking_potential_2018, kruis_creating_2017, wheeler_virtual_2018}.
 
 The most basic design of our architecture requires two main endpoints, that are \acrshort{vtk} and Unity, a native layer of interfacing between the two and a managed Unity plugin for interfacing native code with the engine. The bare bones implementation was developed by Wheeler et al. \cite{wheeler_virtual_2018}, on which our solution is based. This gives us an infrastructural basement on which our further components then work.
 
-To achieve our goal of full integration of VTK, we cannot rely on hardcoded functions, which would impair the stability of the system, as well as its maintainability. As such, our solution comprises an introspecting component that enables the gathering of metadata on \acrshort{vtk} and thus limits the coupling of the solution to a particular version of \acrshort{vtk}.
+To achieve our goal of full integration of VTK, we cannot rely on hardcoded functions, which would impair the generality of the system, as well as its maintainability. As such, our solution comprises an introspecting component that enables the gathering of metadata on \acrshort{vtk} and thus limits the coupling of the solution to a particular version of \acrshort{vtk}.
 
-On the other side, the expression of such metadata also needs to be lowly coupled with the particular implementation of either \acrshort{vtk} or Unity, and as such a component is introduced to enable the generation on-the-fly of UI that fits the I/O operations required to support the development environment. The design of the UI parts themselves is out of the scope of this thesis, we will only discuss its library implementation, which enables the creation of the UIs.
+On the other hand, the expression of such metadata also needs to be lowly coupled with the particular implementation of \acrshort{vtk}, and as such a component is introduced to enable the generation on-the-fly of UI that fits the I/O operations required to support the development environment. The design of the UI parts themselves is out of the scope of this thesis; we will only discuss its design, which enables the creation of the UIs.
 
-Finally, this generality may come at the price of performance, as introspection may be slow, interfacing may not be complete through it, as we will discuss in Section~\ref{sec:design-introspection}, and the UI generation may be slow when working with big and complex pipeline filters. As such, to enable users to enhance their experiences, both with tailored more user-friendly UIs as well as focused and efficient adapters that create a direct link between the infrastructure and \acrshort{vtk} features.
+Finally, this generality may come at the price of performance as introspection may be slow and interfacing may not be complete through it, as we discuss in Section~\ref{sec:design-introspection}, and the UI generation may be slow when working with big and complex pipeline filters. A first experiment in Section~\ref{sec:complexity-generality} shows that the performance on the creation of a somewhat complex pipeline using introspection, which yielded promising results. However, these performances may not be enough in all cases to support the use we envision for this software. As such, to enable users to enhance their experiences, both  tailored, more user-friendly UIs as well as focused and efficient adapters that create a direct link between the infrastructure and \acrshort{vtk} features are introduced in the architecture.
 
-The final architecture will be composed of a total of six components, as shown in Figure~\ref{fig:high-level-architecture}:
+The final architecture is composed of a total of six components, as shown in Figure~\ref{fig:high-level-architecture}:
 
 \begin{itemize}
     \item An \textbf{Infrastructure Layer} which acts as bridge between \acrshort{vtk} and Unity;
@@ -35,23 +37,24 @@ The final architecture will be composed of a total of six components, as shown i
 \section{Infrastructure}
 \label{sec:design-infrastructure}
 
-The infrastructure layer is the component responsible for allowing interaction between all other parts of the system. Its main job is to give a common entry-point to the \acrshort{vtk} interfaces and decide which to call. As this is the critical point of the system where communication flows, this is the component that mostly affects parallelization and distribution capabilities. As such, the calls should be as little blocking as possible.
+The infrastructure layer is the component responsible for allowing interaction between all other parts of the system. Its main job is to give a common entry-point to the \acrshort{vtk} interfaces and decide which to call, acting as a dispatcher. As this is the critical point of the system where communication flows, it is also the one that mostly affects parallelization and distribution capabilities. Thus, the calls should be as little blocking as possible, allowing flows to stop only at endpoints and not in the middleware.
 
-Wheeler et al.'s VtkToUnity \cite{wheeler_virtual_2018} already partly implements this infrastructure layer. Their solution though already implements part of the \acrshort{vtk} interface as well. Furthermore, their calls are highly blocking, as once the C++ native code executes, the Plugin calls each \verb|lock()| on the API and thus parallel calls are impossible. On the other hand, the plugin achieves decent performances that fall within the Unity guidelines for \acrshort{vr} \cite{noauthor_vr_nodate-1}, while allowing for good maintainability and extension possibilities, being native C++ code.
+Wheeler et al.'s VtkToUnity \cite{wheeler_virtual_2018} already partly implements this infrastructure layer and already exposes part of the \acrshort{vtk} interface as well. Unfortunately, their calls are highly blocking, as once the C++ native code executes, the Plugin calls each \verb|lock()| on the API and thus parallel calls are impossible. On the other hand, the plugin achieves decent performances that fall within the Unity guidelines for \acrshort{vr} \cite{unity_vr_2020}, while allowing for good maintainability and extension possibilities.
 
 As such, we base the infrastructure layer on a refactoring of the VtkToUnity plugin which aims at the following results:
 
 \begin{enumerate}
     \item Decoupling of the communication and dispatching from the interfacing responsibilities;
-    \item Refactoring the interfacing code in adapters that will constitute the foundation of the adapter-based interfacing;
+    \item Refactoring the interfacing code in adapters that constitute the foundation of the adapter-based interfacing;
     \item Move as much business logic of the infrastructure in non-blocking calls, preferably with no blocking at the infrastructure layer;
     \item Move blocking logic at interface level.
 \end{enumerate}
 
 %As we expect the interfacing to be slower, especially with the introspection component, the infrastructure layer will also have a cache system to store and retrieve the latest hits and directly call the precise function rather than going through with the introspecting dispatch system.
 
-We use the same approach as in the VtkToUnity plugin to create the C++ native plugin and its interfacing with Unity. Our implementation is then reduced to the minimal API necessary to use the \acrshort{vtk} functionality expressed by the interface mechanisms described in Section~\ref{sec:design-interfaces}. The interface is comprised of the following methods:
+We use the same approach as in the VtkToUnity plugin to create the C++ native plugin and its interfacing with Unity. Our implementation is then reduced to the minimal API necessary to use the \acrshort{vtk} functionality expressed by the interface mechanisms described in Section~\ref{sec:design-interfaces}. Our objective is to make the calls as general as possible, giving the user the most liberty and access as possible. For the naming and implementation, we follow a similar design as the Python/C API \cite{python_c_api}. The interface is comprised of the following methods:
 
+% TODO: review the functions and update to new interface
 \begin{itemize}[leftmargin=1.5truecm]
     \setlength{\itemindent}{-1truecm}
     \item[] \verb|AddVtkObject(objectName, rgbaColour, wireframe, objectId)| takes as input a string representation of the \acrshort{vtk} object to instantiate, the rendering colour and a flag to show the wireframe, and returns the objectId of the shape, which is its index in the object registry that the infrastructure layer keeps;
@@ -66,7 +69,7 @@ We use the same approach as in the VtkToUnity plugin to create the C++ native pl
 
 The core feature of our system is its ability to access \acrshort{vtk} and expose it fully to the \acrshort{vr} development environment. To achieve this, while keeping the system easily maintainable and performing, we use a two way access system. The first access route uses a lookup to check whether custom adapters exist that can satisfy the request from the caller, while the second uses introspection capabilities on the library to find the appropriate method, function or class that can satisfy the request.
 
-We will discuss both access tiers and how each of them is designed. Both these subsystems are intended to be separate services that the main architecture can either directly access when running in a stand-alone version on the users PC, or can be distributed on a network and be accessed through distribution engines such as DtCraft \cite{huang2017dtcraft} or Boost::MPI \cite{schaling2011boost}.
+We discuss both access tiers and how each of them is designed. Both these subsystems are intended to be separate services that the main architecture can either directly access when running in a stand-alone version on the users PC, or can be distributed on a network and be accessed through distribution engines such as DtCraft \cite{huang2017dtcraft} or Boost::MPI \cite{schaling2011boost}.
 
 \subsection{Adapters}
 \label{sec:design-adapters}
@@ -74,13 +77,13 @@ We will discuss both access tiers and how each of them is designed. Both these s
 The first access tier for \acrshort{vtk} is a set of custom adapters that users can define, expand and modify and get built with the solution. These adapters have the objective of allowing the user to customize their system and tailor it to their needs. The user can define different ways in which the native plugin interacts with \acrshort{vtk}. Particular use cases for adapters are:
 
 %TODO: implementation of other two use cases
-\begin{itemize}
+\begin{enumerate}
     \item The creation of custom loggers for diagnostics and flow analysis;
     \item Implementation of \textit{templates} at native level that enable faster instantiation and define their own parameters and routines;
     \item Implementation of custom algorithms that compound \acrshort{vtk} features.
-\end{itemize}
+\end{enumerate}
 
-The adapters are Singleton instances that define first and foremost a unique string identifying which component they are adapting. Such ID represents the name of the object the code adapts. For instance, an adapter for the \acrshort{vtk} source class \verb|vtkConeSource| will be identified by the class' name. Furthermore, each adapter has to implement access methods for getting descriptions of what attributes the class has, getting the values of each of those attributes and setting such values as well. 
+The adapters are Singleton instances that define first and foremost a unique string identifying which component they are adapting. Such ID represents the name of the object the code adapts. For instance, an adapter for the  source class \verb|vtkConeSource| should be identified by the class' name. Furthermore, each adapter has to implement access methods for getting descriptions of what attributes the class has, getting the values of each of those attributes and setting such values as well. 
 
 Optionally, the adapter can implement rendering information in case the adapter is not for a specific \acrshort{vtk} class but for a template or custom algorithm, in which case information is needed on how to render and update the objects generated by the adapter.
 
@@ -117,11 +120,11 @@ protected:
     \end{cpp}
 \end{figure}
 
-The class has a unique identifier in the form of a \verb|LPCSTR| (Long Pointer to Const STRing) which is to be set when instantiating the adapter. The class also carries with it a descriptor of the \acrshort{vtk} class that specifies what attributes the class has and what is their type. This descriptor is used by the Unity Managed plugin as we will discuss in Section~\ref{sec:design-uicomposer}.
+The class has a unique identifier in the form of a \verb|LPCSTR| (Long Pointer to Const STRing) which is to be set when instantiating the adapter. The class also carries with it a descriptor of the \acrshort{vtk} class that specifies what attributes the class has and what is their type. This descriptor is used by the Unity Managed plugin as we discuss in Section~\ref{sec:design-uicomposer}.
 
-Alongside these functions, there are two templates that define the types of \verb|getter| and \verb|setter| methods used by adapters. These functions will take as input a pointer to the actor that renders the \acrshort{vtk} object and the first will return a string representation of the value of the attribute while the second will take a further argument that is the new value to which attribute is to be set.
+Alongside these functions, there are two templates that define the types of \verb|getter| and \verb|setter| methods used by adapters. These functions take as input a pointer to the actor that renders the \acrshort{vtk} object and the first returns a string representation of the value of the attribute while the second takes a further argument that is the new value to which attribute is to be set.
 
-The generic calls for getting and setting attributes are respectively \verb|GetAttribute| and \verb|SetAttribute|. These functions act as dispatchers for the particular operations, that can either be directly implemented into the function but, as good practice, we will later show an example of how we recommend these adapters should be implemented.
+The generic calls for getting and setting attributes are respectively \verb|GetAttribute| and \verb|SetAttribute|. These functions act as dispatchers for the particular operations, that can either be directly implemented into the function but, as good practice, we later show an example of how we recommend these adapters should be implemented.
 
 The actual attribute to change is encoded in a \verb|LPCSTR| that contains the name of the attribute exactly as written in the C++ code. A difference from the \verb|GetAttribute| generic call and the particular \verb|getter| template is that the return value is not returned but a specific parameter acts as return buffer, as this value is not to be used inside the C++ native code but to be sent through to the C\# interface in Unity.
 
@@ -157,15 +160,103 @@ const std::unordered_map<LPCSTR, VtkAdapter*> VtkAdapterUtility::s_adapters =
 \subsection{Introspection}
 \label{sec:design-introspection}
 
-As one of the objectives is to make the software less dependant on the \acrshort{vtk} version, a component with introspection capabilities is introduced to gather the necessary information on the \acrshort{vtk} implementation used. As most of the native implementation of the plugin is written in C++, we can either find a way to introduce introspection capabilities in C++ or use a language which both has a \acrshort{vtk} wrapper available and has such tools.
+% As one of the objectives is to make the software less dependant on the \acrshort{vtk} version, a component with introspection capabilities is introduced to gather the necessary information on the \acrshort{vtk} implementation used. As most of the native implementation of the plugin is written in C++, we can either find a way to introduce introspection capabilities in C++ or use a language which both has a \acrshort{vtk} wrapper available and has such tools.
 
-For the first option, some research has been carried out and the results are incomplete \cite{tyng1998nonintrusive} or introduce non-trivial overheads \cite{bayser2012rtti}, and in both cases would mean the introduction of further maintainability issues. The second option is not better either when it comes to new couplings, and we introduce a third language to the software as well as potential libraries necessary for communication.
+% For the first option, some research has been carried out and the results are incomplete \cite{tyng1998nonintrusive} or introduce non-trivial overheads \cite{bayser2012rtti}, and in both cases would mean the introduction of further maintainability issues. The second option is not better either when it comes to new couplings, and we introduce a third language to the software as well as potential libraries necessary for communication.
 
-As previous solutions already exist that offer some capabilities as we require for \acrshort{vtk} in Python \cite{dreuning_visual_2016}, we opt for an embedded design, even though it may not be the best performance-wise, it allows us to use established libraries with decent communities supporting them, whereas most C++ introspection extensions offer limited support.
+% As previous solutions already exist that offer some capabilities as we require for \acrshort{vtk} in Python \cite{dreuning_visual_2016}, we opt for an embedded design, even though it may not be the best performance-wise, it allows us to use established libraries with decent communities supporting them, whereas most C++ introspection extensions offer limited support.
 
-From the Dreuning solution we adapt the \verb|ClassTree| implementation in order to strip it of its UI related code, as well as the \verb|PipelineObject| which we use as the introspective wrapper for the \acrshort{vtk} objects we instantiate to hold the getter and setter calls. We also expand this class to contain the description information of the \acrshort{vtk} objects that will be used by the UI Composer component to create UIs on the fly, that we will discuss in Section~\ref{sec:design-uicomposer}.
+As we discussed in Section~\ref{sec:complexity-generality}, solutions already exist that implement introspective systems to access VTK in Python. In particular, we modify and extend the Python scripts from Dreuning's solution in order to make use of its \verb|ClassTree|. The issue we find with this implementation is that it is limited to \verb|vtkAlgorithm| classes, and as such leaves out a chunk of the features of the VTK. As extending these scripts is out of the scope of this thesis, we instead introduce a feature to overcome this limitation that would nevertheless be implemented, i.e. the ability to pipe the result of a VTK call to other calls. This does not allow the user to instantiate objects of classes that are not \verb|vtkAlgorithm|, however it allows already for a big part of the left out features to be accessed.
 
-A further script has been produced to facilitate the calls from C++, exposing the required features for: (a) creating a (wrapped) \acrshort{vtk} object and return the C++ object's address; (b) getting the description of a \acrshort{vtk} object, i.e. its attributes and their types; (c) get the value of a \acrshort{vtk} object's attribute; (d) set the value of a \acrshort{vtk} object's attribute; and (e) delete the wrapper's information once the \acrshort{vtk} object gets deleted in the environment. 
+From Dreuning's solution we adapt the \verb|ClassTree| implementation in order to strip it of its UI related code, as well as the \verb|PipelineObject|, which we use as the introspective wrapper for the \acrshort{vtk} objects we instantiate to hold the getter and setter calls. A further script has been produced to facilitate the calls from C++, exposing the required features for: (a) creating a (wrapped) \acrshort{vtk} object and return the C++ object's address; (b) getting the description of a \acrshort{vtk} object, i.e. its attributes and their types, used by the Composer to generate UIs on-the-fly; (c) get the value of a \acrshort{vtk} object's attribute; (d) set the value of a \acrshort{vtk} object's attribute; and (e) delete the wrapper's information once the \acrshort{vtk} object gets deleted in the environment. 
+
+In order to access the Python scripts from the C++ native plugin, we embed the Python 3.7 interpreter in the C++ implementation. This is achieved by initializing the interpreter as part of the process, using a subset of the software's memory to run Python. This, combined with the ability to wrap the C++ VTK objects using the \verb|vtkPythonUtils| class into Python and then access them back again, allows us not to worry about synchronizing memory and processes, boosting both memory and time performances.
+
+The implementation instantiates a \verb|Introspector| class from Python, using it as access-point for the introspective methods. Using the \verb|PyObject_CallMethod| we are able to use the methods of the \verb|Introspector|, starting with \verb|createVtkObject| which instantiates a wrapped VTK object, using the class name, that carries the information of the getter and setter methods of the \verb|vtkAlgorithm| class. These wrapped objects, that we will now call \textit{nodes}, are registered in a structure that maps the pointer of the C++ object to its wrapped Python counterpart, for fast lookup access \cite{stdunord16}. The C++ interface exposes calls that allow, having the node available, to call getters, setters, to execute the VTK update of the object, retrieve the output port, delete the object, execute a generic or piped call. This last one means that you can execute, for example, \verb|object.GetOutput().GetCenter()| with a single access to the \verb|Introspector| and use non introspectable objects as intermediate values, expanding the possible calls that the plugin can execute.
+
+To avoid ambiguity when calling these methods, and to avoid passing excessive data through the Unity native interface, the methods that retrieve values from the \verb|Introspector| use a postfix notation to determine whether the call is to return a native value that can easily be parsed to and from a string representation (\verb|_AsString|), an id of a VTK object (\verb|_AsVtkObject|), or either if the result is to be discarded or the method being called has \verb|void| return type (\verb|_AsVoid|).
+
+When calling any method that uses parameters of generic types, we use a similar convention as the Python/C API so to make the maitainability of the code easier, as these are strictly intertwined and usually used alongside. As such, calls are structured as follows: the first parameter is the pointer to the object on which the method is to be called, the second parameter is the name of the method to be called, or a specifier that acts as a dispatching value (i.e. dispatching either to \verb|SetInputConnection| or \verb|SetSourceConnection|), third is the string format of the following parameters (e.g. a method that has three doubles as parameters would have as format \verb|"fff"|), and finally a vector containing the parameters. Special treatment is reserved for the \verb|"O"| object parameters that are first past as string representation of integer values, then parser to integers by the infrastructure layer, which represents the id of the VTK object in the registry, and finally two vectors are sent to the introspection layer, one with the \verb|vtkObjectBase *| objects and the other with the rest of the parameters.
+
+A complete description of the formatting values see Table~\ref{tab:format-values}, while the interface of the introspection layer and their respective calls in the infrastructure layer is shown in Table~\ref{tab:vtk-plugin-api}.
+
+\begin{table}[ht!]
+    \centering
+    \begin{tabulary}{.9\textwidth}{LL}
+    \multicolumn{1}{c}{\textbf{Symbol}} & \multicolumn{1}{c}{\textbf{Meaning}} \\ \hline
+    O & A VTK object. The value from the Managed plugin is the ID of the object in the infrstructure layer's registry. The Introspection layer receives the pointer to the VTK object. \\
+    d                                   & A C integer or long value.           \\
+    f                                   & A C float or double value.           \\
+    s                                   & A C char or LPCSTR value.            \\
+    b                                   & A C++ bool value.                    \\
+    \%\# & is any of the previous symbols, \# is the number of values. It represents a tuple of values, e.g.: f3 corresponds to (fff) in the Python/C API.
+    \end{tabulary}
+    \caption{Format symbols used in the calls to the plugin.}
+    \label{tab:format-values}
+\end{table}
+
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+\begin{table}[ht!]
+    \centering
+    \begin{tabulary}{.9\textwidth}{LLL}
+    \multicolumn{1}{c}{\textbf{Introspection API}} &
+      \multicolumn{1}{c}{\textbf{Plugin API}} &
+      \multicolumn{1}{c}{\textbf{Explanation}} \\ \hline
+     &
+      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallObject(\\     LPCSTR classname)\end{tabular} &
+      Instantiates an object of type classname, adds it to the object registry at both Introspection and Plugin level and returns the id in the plugin registry. \\
+    \multirow{-2}{*}{\begin{tabular}[c]{@{}l@{}}vtkObjectBase *CreateObject(\\     LPCSTR classname)\end{tabular}} &
+      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallObjectAndShow(\\     LPCSTR classname,\\     Float4 color,\\     bool wireframe)\end{tabular} &
+      Same as above, but also wraps it in an actor with specified color and wireframe. \\
+    \begin{tabular}[c]{@{}l@{}}LPCSTR GetProperty(\\     vtkObjectBase *pVtkObject,\\     LPCSTR propertyName)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_GetAttrAsString(\\     const int rid,\\     LPCSTR propertyName)\end{tabular} &
+      Retrieves the value of the specificed attribute and returns it as a string. \\
+    \begin{tabular}[c]{@{}l@{}}void SetProperty(\\     vtkObjectBase *pVtkObject,\\     LPCSTR propertyName,\\     LPCSTR format,\\     LPCSTR newValue)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}void VtkResrouce\_SetAttrFromString(\\     const int rid,\\     LPCSTR propertyName,\\     LPCSTR format,\\     LPCSTR newValue)\end{tabular} &
+      Sets a value from a string. The format identifies how the value has to be parsed. \\
+    \begin{tabular}[c]{@{}l@{}}LPCSTR GetDescriptor(\\     vtkObjectBase *pVtkObject)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_GetDescriptor(\\     const int rid)\end{tabular} &
+      Returns a string description of the object, in particular its attributes' name and type, comma separated. \\
+    \begin{tabular}[c]{@{}l@{}}LPCSTR CallMethod\_AsString(\\     vtkObjectBase *pVtkObject,\\     LPCSTR method,\\     LPCSTR format,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_CallMethodAsString(\\     const int rid,\\     LPCSTR method,\\     LPCSTR format,\\     const char *const *argv)\end{tabular} &
+       \\
+    \begin{tabular}[c]{@{}l@{}}vtkObjectBase *CallMethod\_AsVtkObject(\\     vtkObjectBase *pVtkObject,\\     LPCSTR method,\\     LPCSTR format,\\     LPCSTR classname,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallMethodAsVtkObject(\\     const int rid,\\     LPCSTR method,\\     LPCSTR format,\\     LPCSTR classname,\\     const char *const *argv)\end{tabular} &
+       \\
+    \begin{tabular}[c]{@{}l@{}}void CallMethod\_AsVoid(\\     vtkObjectBase *pVtkObject,\\     LPCSTR method,\\     LPCSTR format,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}void VtkResource\_CallMethodAsVoid(\\     const int rid,\\     LPCSTR method,\\     LPCSTR format,\\     const char *const *argv)\end{tabular} &
+      \multirow{-3}{*}{Calls a method on a given object and returns its reutrn value as specified in the postfix. Based on the postfix, the signatures may differ depending on further required parsing information.} \\
+    \begin{tabular}[c]{@{}l@{}}LPCSTR CallMethodPiped\_AsString(\\     vtkObjectBase *pVtkObject,\\     vector\textless{}LPCSTR\textgreater methods,\\     vector\textless{}LPCSTR\textgreater formats,\\     vector\textless{}vtkObjectBase *\textgreater refv\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_CallMethodPipedAsString(\\     const int rid,\\     const int methodc,\\     const int formatc,\\     const char *const *methodv,\\     const char *const *formatv,\\     const char *const *argv)\end{tabular} &
+       \\
+    \begin{tabular}[c]{@{}l@{}}vtkObjectBase *CallMethodPiped\_AsVtkObject(\\     vtkObjectBase *pVtkObject,\\     vector\textless{}LPCSTR\textgreater methods,\\     vector\textless{}LPCSTR\textgreater formats,\\     LPCSTR classname,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallMethodPipedAsVtkobject(\\     const int rid,\\     const int methodc,\\     const int formatc,\\     LPCSTR classname,\\     const char *const *methodv,\\     const char *const *formatv,\\     const char *const *argv)\end{tabular} &
+       \\
+    \begin{tabular}[c]{@{}l@{}}void CallMethodPiped\_AsVoid(\\     vtkObjectBase *pVtkObject,\\     vector\textless{}LPCSTR\textgreater methods,\\     vector\textless{}LPCSTR\textgreater formats,\\     LPCSTR classname,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}void VtkResource\_CallMethodPipedAsVoid(\\     const int rid,\\     const int methodc,\\     const int formatc,\\     const char *const *methodv,\\     const char *const *formatv,\\     const char *const *argv)\end{tabular} &
+      \multirow{-3}{*}{Calls a methods pipeline starting from a given object and returns its final reutrn value as specified in the postfix. Based on the postfix, the signatures may differ depending on further required parsing information.} \\
+    \begin{tabular}[c]{@{}l@{}}void DeleteObject(\\     vtkObjectBase *pVtkObject)\end{tabular} &
+      \begin{tabular}[c]{@{}l@{}}void VtkReousrce\_DeleteObject(\\     const int rid)\end{tabular} &
+      Deletes an object and its wrappers, freeing its memory space. \\
+    bool ErrorOccurred() &
+      bool VtkError\_Occurred() &
+      Checks whether an error occurred on the last call of VtkResource. \\
+    LPCSTR ErrorGet() &
+      LPCSTR VtkError\_Get() &
+      Returns the last error occurred on VtkResource. It should always be called, in conjunction with VtkError\_Occurred(), after any VtkResource call. \\
+     &
+      \begin{tabular}[c]{@{}l@{}}void VtkResource\_Connect(\\     LPCSTR connectionType,\\     const int sourceRid,\\     const int targetRid)\end{tabular} &
+      Connects the sources output to the targets input connection. The connection type identifies the method to be called. \\
+     &
+      \begin{tabular}[c]{@{}l@{}}void VtkResource\_AddActor(\\     const int rid,\\     Float4 color,\\     bool wireframe)\end{tabular} &
+      Adds mapper and actor to the source and adds it to the renderer.
+    \end{tabulary}
+    \caption{Introspection and Unity plugin API and how they are connected.}
+    \label{tab:vtk-plugin-api}
+\end{table}
 
 %\begin{itemize}[leftmargin=1.5truecm]
 %    \setlength{\itemindent}{-1truecm}
@@ -173,21 +264,19 @@ A further script has been produced to facilitate the calls from C++, exposing th
     
 %\end{itemize}
 
-To make the Python and the C++ components communicate we could either use shared memories to make the communication faster and keep them as separate components or directly embed the Python interpreter in the C++ component and use native calls to execute the python code. To limit resources usage and overhead, we chose the second option. 
+% In order to use this code from the C++ implementation, we embed the Python interpreter in the software. Fortunately, this is a use case covered in the Python/C API documentation\footnote{\url{https://docs.python.org/3.6/extending/embedding.html}}. While this solution already achieves a lot for our software, we handle a lot of objects and all the instantiation and de-instantiation of these objects requires a lot of verbose code. A few options are available to reduce the complexity of the code, in particular we consider the \verb|vtkPythonInterpreter| module from \acrshort{vtk} itself and the Boost::Python library that exposes a simplified version of the Python/C API for both embedding and extending \cite{abrahams2003building, schaling2011boost}.
 
-In order to use this code from the C++ implementation, we need to embed the Python interpreter in the software. Fortunately, this is a use case covered in the Python/C API documentation\footnote{\url{https://docs.python.org/3.6/extending/embedding.html}}. While this solution already achieves a lot for our software, we handle a lot of objects and all the instantiation and de-instantiation of these objects requires a lot of verbose code. A few options are available to reduce the complexity of the code, in particular we consider the \verb|vtkPythonInterpreter| module from \acrshort{vtk} itself and the Boost::Python library that exposes a simplified version of the Python/C API for both embedding and extending \cite{abrahams2003building, schaling2011boost}.
+% Both present pros and cons, and in both cases impact the maintainability of the system. The \acrshort{vtk} module allows us to not couple our solution to further software, keeping all the external code encapsulated in \acrshort{vtk}. This is though a limited solution, as it exposes a very limited set of functionality of the Python/C API, based on previous uses of Python embedding in native \acrshort{vtk} software.
 
-Both present pros and cons, and in both cases impact the maintainability of the system. The \acrshort{vtk} module allows us to not couple our solution to further software, keeping all the external code encapsulated in \acrshort{vtk}. This is though a limited solution, as it exposes a very limited set of functionality of the Python/C API, based on previous uses of Python embedding in native \acrshort{vtk} software.
+% On the other hand, Boost is a more versatile library, which exposes a general purpose API for Python/C extending and embedding. Even though more powerful than the \acrshort{vtk} module, it still is not complete, and the Python/C API still needs to be used in particular situations. Furthermore, it presents some conflicts with how the Python/C API is intended to be used, e.g. the \verb|Py_Finalize()| should not be called when using Boost::Python. Adding the fact that this introduces a further coupling with external software, presents multiple challenges towards the maintainability of our solution.
 
-On the other hand, Boost is a more versatile library, which exposes a general purpose API for Python/C extending and embedding. Even though more powerful than the \acrshort{vtk} module, it still is not complete, and the Python/C API still needs to be used in particular situations. Furthermore, it presents some conflicts with how the Python/C API is intended to be used, e.g. the \verb|Py_Finalize()| should not be called when using Boost::Python. Adding the fact that this introduces a further coupling with external software, presents multiple challenges towards the maintainability of our solution.
-
-Given these considerations, we opt for the integrated module of \acrshort{vtk} as to drive down unmaintainability factors.
+% Given these considerations, we opt for the integrated module of \acrshort{vtk} as to drive down unmaintainability factors.
 
 \section{Managed Plugin}
 \label{sec:design-managed-plugin}
 
-\subsection{Toolbox}
-\label{sec:design-toolbox}
+% \subsection{Toolbox}
+% \label{sec:design-toolbox}
 
-\subsection{Composer}
-\label{sec:design-uicomposer}
+% \subsection{Composer}
+% \label{sec:design-uicomposer}

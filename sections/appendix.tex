@@ -241,4 +241,63 @@ VtkAdapter* VtkAdapterUtility::GetAdapter(
 }
 \end{cpp}
     
+\chapter{Python/C++ Performance tests}
+\label{apx:streamtracer-performance-tests}
+
+To evaluate the best approach towards introducing introspection into our project, we developed four tests that determine the performances of Python directly accessing \acrshort{vtk}, Python using introspection to access \acrshort{vtk}, C++ using the embedded Python interpreter to directly access \acrshort{vtk} and C++ using the embedded Python interpreter using introspection to access \acrshort{vtk}, the code for which is shown respectively in Listing~\ref{lst:py-native-vtk}, Listing~\ref{lst:py-intro-vtk}, Listing~\ref{lst:cpp-native-vtk} and Listing~\ref{lst:cpp-intro-vtk}. In both Python and C++ we use helper functions that time the execution of the functions we call. Their implementations are respectively shown in Listings~\ref{lst:py-timed-execution} and Listings~\ref{lst:cpp-timed-execution}.
+
+\begin{python}[label=lst:py-native-vtk,caption={Native Python VTK benchmark script},aboveskip=20pt]
+reader = timed_execution("reader_inst", vtkStructuredGridReader)
+timed_execution("reader_setfile", reader.SetFileName, ("density.vtk",))
+timed_execution("reader_update", reader.Update)
+
+seeds = timed_execution("seeds_inst", vtkPointSource)
+timed_execution("seeds_setradius", seeds.SetRadius, (3.0,))
+timed_execution("seeds_setcenter_reader_getoutput_getcenter", seeds.SetCenter, (reader.GetOutput().GetCenter(),))
+timed_execution("seeds_setnumberofpoints", seeds.SetNumberOfPoints, (100,))
+
+streamer = timed_execution("streamer_inst", vtkStreamTracer)
+timed_execution("streamer_setinputconn_reader_getoutputport", streamer.SetInputConnection, (reader.GetOutputPort(0),))
+timed_execution("streamer_setsourceconn_seeds_getoutputport", streamer.SetSourceConnection, (seeds.GetOutputPort(0),))
+timed_execution("streamer_setmaxpropagation", streamer.SetMaximumPropagation, (1000,))
+timed_execution("streamer_setinitialintegstep", streamer.SetInitialIntegrationStep, (.1,))
+timed_execution("streamer_setintegdirboth", streamer.SetIntegrationDirectionToBoth)
+
+outline = timed_execution("outline_inst", vtkStructuredGridOutlineFilter)
+timed_execution("outline_setinputconn_reader_getoutputport", outline.SetInputConnection, (reader.GetOutputPort(0),))
+\end{python}
+
+\begin{python}[label=lst:py-intro-vtk,caption={Introspective Python VTK benchmark script},aboveskip=20pt]
+introspector = timed_execution("introspector_inst", Introspector)
+
+reader = timed_execution("reader_inst", introspector.createVtkObject, ("vtkStructuredGridReader",))
+timed_execution("reader_setfile", introspector.setVtkObjectAttribute, (reader, "FileName", "s", "density.vtk"))
+timed_execution("reader_update", introspector.updateVtkObject, (reader,))
+
+seeds = timed_execution("seeds_inst", introspector.createVtkObject, ("vtkPointSource",))
+timed_execution("seeds_setradius", introspector.setVtkObjectAttribute, (seeds, "Radius", "f", 3.0))
+center = timed_execution("reader_getoutputgetcenter", introspector.genericCall, (introspector.vtkInstanceCall(reader, "GetOutput", ()), "GetCenter", ()))
+timed_execution("seeds_setcenter_reader_getoutput_getcenter", introspector.setVtkObjectAttribute, (seeds, "Center", "f3", introspector.outputFormat(center)))
+timed_execution("seeds_setnumberofpoints", introspector.setVtkObjectAttribute, (seeds, "NumberOfPoints", "d", 100))
+
+streamer = timed_execution("streamer_inst", introspector.createVtkObject, ("vtkStreamTracer",))
+timed_execution("streamer_setinputconn_reader_getoutputport", introspector.vtkInstanceCall, (streamer, "SetInputConnection", (introspector.getVtkObjectOutputPort(reader),)))
+timed_execution("streamer_setsourceconn_seeds_getoutputport", introspector.vtkInstanceCall, (streamer, "SetSourceConnection", (introspector.getVtkObjectOutputPort(seeds),)))
+timed_execution("streamer_setmaxpropagation", introspector.setVtkObjectAttribute, (streamer, "MaximumPropagation", "d", 1000))
+timed_execution("streamer_setinitialintegstep", introspector.setVtkObjectAttribute, (streamer, "InitialIntegrationStep", "f", .1))
+timed_execution("streamer_setintegdirboth", introspector.vtkInstanceCall, (streamer, "SetIntegrationDirectionToBoth", ()))
+
+outline = timed_execution("outline_inst", introspector.createVtkObject, ("vtkStructuredGridOutlineFilter",))
+timed_execution("outline_setinputconn_reader_getoutputport", introspector.vtkInstanceCall, (outline, "SetInputConnection", (introspector.getVtkObjectOutputPort(reader),)))
+\end{python}
+
+\begin{python}[label=lst:py-timed-execution,caption={timed\_execution Python function},aboveskip=20pt]
+time_execution_data = {}
+def timed_execution(name, func, args = ()):
+	t_start = perf_counter()
+	r = func(*args)
+	time_execution_data[name] = perf_counter() - t_start
+	return r
+\end{python}
+
 \end{appendices}

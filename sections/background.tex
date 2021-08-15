@@ -1,7 +1,7 @@
 \chapter{Background}
 \label{ch:background}
 
-This chapter presents the necessary background information for this thesis. First, we define some basic terminology that we will use throughout this document. Next, we research prior work in the field of \acrshort{vr} that interfaces \acrshort{vtk} and Unity or develops \acrshort{ide}s for visualizations within a \acrshort{vr} environment. We also examine the software and solutions produced by these previous studies and extract which factors contribute to potential maintainability issues and which on the contrary make them more maintainable. 
+This chapter presents the necessary background information for this thesis. First, we define some basic terminology that we use throughout this document. Next, we research prior work in the field of \acrshort{vr} that interfaces \acrshort{vtk} and Unity or develops \acrshort{ide}s for visualizations within a \acrshort{vr} environment. We also examine the software and solutions produced by these previous studies and extract which factors contribute to potential maintainability issues and which on the contrary make them more maintainable. 
 
 \section{Terminology}
 
@@ -21,7 +21,7 @@ We define a set of terms that we use throughout this thesis. We use the \textit{
 
 As the necessity to produce ever more complex visualizations grows, both in commercial and scientific settings, a number of visualization toolkits have been developed to support the development of these visualizations. These libraries tend to specialize on some form of visualization; for example, \acrfull{vtk} focuses on scientific visualization \cite{kruis_creating_2017}.
 
-These toolkits come in a variety of flavours, languages and/or wrappings and it is thus out of the scope of this thesis to analyse and develop upon all of them. We will discuss research done on all three to create \acrshort{ide}s for or within \acrshort{vr} environments, but we will ultimately choose to use for a proof of concept.
+These toolkits come in a variety of flavours, languages and/or wrappings and it is thus out of the scope of this thesis to analyse and develop upon all of them. We discuss research done on all three to create \acrshort{ide}s for or within \acrshort{vr} environments, but we ultimately choose to use for a proof of concept.
 
 \acrfull{vtk} is a library oriented towards \blockquote{\textit{manipulating and displaying scientific data}}\footnote{\url{https://vtk.org/}}. It creates visualizations by means of filter pipelines, a technique proposed by Haber and McNabb \cite{haber1990visualization}. These filters manipulate input data through some set of transformations and return the composed data which can then be visualized. 
 
@@ -48,7 +48,7 @@ Upon \acrshort{vtk}, a number of wrappers have been produced, allowing the libra
 
 Game Engines can be defined as "\textit{software frameworks for game development}" \cite{politowski2021game}. These frameworks though are not all equal, and as such we focus on those defined as \textit{\acrfull{gpge}s}, which we define as \textit{frameworks for the creation of virtual environments}, which is a fundamental component of games. This also means that these softwares are not restricted to game development purposes, but are used for a variety of projects that entail the simulation of virtual worlds. These frameworks perfectly fit our requirement of creating an immersive and interactive environment for our \acrshort{vr} IDE.
 
-A number of \acrshort{gpge}s exist, such as Unity Engine \cite{haas2014history} and Unreal Engine \cite{unrealengine}. We will be using Unity as the engine on which we base our solution. This is ideal for our research as previous research already exists discussing the integration of \acrshort{vtk} and this engine \cite{wheeler_virtual_2018}. Furthermore, it is a very well established, used and supported engine.
+A number of \acrshort{gpge}s exist, such as Unity Engine \cite{haas2014history} and Unreal Engine \cite{unrealengine}. We use Unity as the engine on which we base our solution. This is ideal for our research as previous research already exists discussing the integration of \acrshort{vtk} and this engine \cite{wheeler_virtual_2018}. Furthermore, it is a very well established, used and supported engine.
 
 We chose to use Unity due to the number of advantages that come with the engine. First and foremost, Unity has already a decent \acrshort{vr} integration with the OpenVR\footnote{\url{https://github.com/ValveSoftware/unity-xr-plugin}} and OpenXR\footnote{\url{https://docs.unity3d.com/Packages/com.unity.xr.openxr@0.1/manual/index.html}} plugins. The \acrshort{vr} community is already quite established and, in general, the development community is very active and offers valuable support. 
 
@@ -57,7 +57,7 @@ The documentation for the engine is comprehensive and freely available with a nu
 \section{Related Work}
 \label{sec:related-work}
 
-A number of projects already attempted interfacing visualization libraries with frameworks, be it \acrshort{gpge}s or IDEs, while others attempted the creation of visualization editors, albeit for different purposes and/or constraints. In this section we will discuss these previous attempts and how they contribute to laying the ground for our development.
+A number of projects already attempted interfacing visualization libraries with frameworks, be it \acrshort{gpge}s or IDEs, while others attempted the creation of visualization editors, albeit for different purposes and/or constraints. In this section we discuss these previous attempts and how they contribute to laying the ground for our development.
 
 \paragraph{OculusVTK Visual editor}
 
@@ -65,7 +65,7 @@ In 2016 a similar attempt to create a visual editor for OculusVTK was carried ou
 
 While the objectives of the authors are quite similar to ours, they do not focus on the same constraints we set for our project, i.e. performance and the designing of a distributable and parallelizable architecture. Furthermore, their solution focuses on Oculus, whereas our solution aims at being headset-agnostic.
 
-The power of the solution proposed lays in its usage of Python's capability of introspecting on its modules and harvesting data in order to achieve a more general approach to interfacing with \acrshort{vtk}. We base our solution partly on this software, as we will discuss in Section~\ref{sec:design-introspection}.
+The power of the solution proposed lays in its usage of Python's capability of introspecting on its modules and harvesting data in order to achieve a more general approach to interfacing with \acrshort{vtk}. We base our solution partly on this software, as we discuss in Section~\ref{sec:design-introspection}.
 
 % Cannot find any reference of OculusVTK outside of one SURFsara webpage and Dreuning's and Perlee's theses.
 On the other hand, this solution is limited to the usage of the OculusVTK C++ boilerplate for OculusVR. The code is maintained by SURFsara and offers an extension of the OculusVR SDK for Oculus HMDs. Compared to the support of Unity, this limits the generality of the solution, which we aim at extending.
@@ -84,7 +84,7 @@ Furthermore, the Python scripts are limited to only working through introspectio
     \label{fig:wheeler-architecture}
 \end{figure}
 
-The authors carry out experiments to evaluate the performances of the solution. Their objective frame rate is of 90 FPS using a HTC Vive \acrfull{hmd}, which aligns with Unity's own guidelines \cite{noauthor_vr_nodate-1} as well as the 90Hz refresh rate of the \acrshort{hmd} \cite{BuyVIVEH54}. With simpler renderings the solution is of its own able to achieve the desired frame rate, but with more complex scenes it does not. To overcome this, the authors propose the usage of setting the desired frame rate using \acrshort{vtk}'s own \verb|vtkExternalRenderingOpenGLRenderWindow::SetDesiredUpdateRate| to solve this.
+The authors carry out experiments to evaluate the performances of the solution. Their objective frame rate is of 90 FPS using a HTC Vive \acrfull{hmd}, which aligns with Unity's own guidelines \cite{unity_vr_2020} as well as the 90Hz refresh rate of the \acrshort{hmd} \cite{BuyVIVEH54}. With simpler renderings the solution is of its own able to achieve the desired frame rate, but with more complex scenes it does not. To overcome this, the authors propose the usage of setting the desired frame rate using \acrshort{vtk}'s own \verb|vtkExternalRenderingOpenGLRenderWindow::SetDesiredUpdateRate| to solve this.
 
 This solution presents some limitations, as the C++ native code locks the shared API at every call, and as such limits the ability to leverage parallelization of the software, which could potentially aid the rendering quality while the objective frame rate is set. Furthermore, the plugin focuses on volume rendering in particular, while our solution aims at a more general solution.
 
