@@ -1,0 +1,9 @@
+\chapter{Materials}
+\label{ch:materials}
+
+To test our design, we implemented the engine of the environment, i.e. the Infrastructure layer and its integration with Unity, and developed two test scenes in Unity using the plugin and its calls through the Introspection layer. In order to test them, we used an enviroment comprised of Python 3.7 to run the scripts and embed the interpreter in the C++ native plugin. We use the C++11 standard for our project, built with CMake 3.14 and MS Visual Studio Community 2015. We tested the implementation with VTK 8.1, 8.1.2 and 9.0.2 to test its version-agnosticism, and Unity 2019.3.5f1, under Windows 10.
+
+% TODO: add the specifications of Chris' PC
+The environment runs on a workstation built with an Intel i5-, NVidia RTX 3080 and 16 GB of GDDR4 RAM. We used a first generation HTC Vive HMD to test the scenes, which has a 90 Hz refresh rate with a combined 2160x1200 pixels. For the tests we used a density dataset file provided by Boston University Tech in a 2008 workshop on Paraview\footnote{Available online at \url{https://www.bu.edu/tech/support/research/training-consulting/presentations/visualizationworkshop08/}.}. 
+
+We track performances using a C\# script in the Unity editor called through a static object loader that dumps the FPS count every second into a log file. We then process the file in order to produce the following information from the data: the FPS distrobution, maximum, minimum, mean and median values. We compare the results with the recommended values from Unity and HTC. We repeat these tests for the two scenes at differening distances from the user and executing delayed updates of the objects in the scene to see how these updates impact the user experience.
