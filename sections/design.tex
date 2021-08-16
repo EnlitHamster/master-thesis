@@ -178,7 +178,7 @@ To avoid ambiguity when calling these methods, and to avoid passing excessive da
 
 When calling any method that uses parameters of generic types, we use a similar convention as the Python/C API so to make the maitainability of the code easier, as these are strictly intertwined and usually used alongside. As such, calls are structured as follows: the first parameter is the pointer to the object on which the method is to be called, the second parameter is the name of the method to be called, or a specifier that acts as a dispatching value (i.e. dispatching either to \verb|SetInputConnection| or \verb|SetSourceConnection|), third is the string format of the following parameters (e.g. a method that has three doubles as parameters would have as format \verb|"fff"|), and finally a vector containing the parameters. Special treatment is reserved for the \verb|"O"| object parameters that are first past as string representation of integer values, then parser to integers by the infrastructure layer, which represents the id of the VTK object in the registry, and finally two vectors are sent to the introspection layer, one with the \verb|vtkObjectBase *| objects and the other with the rest of the parameters.
 
-A complete description of the formatting values see Table~\ref{tab:format-values}, while the interface of the introspection layer and their respective calls in the infrastructure layer is shown in Table~\ref{tab:vtk-plugin-api}.
+A complete description of the formatting values see Table~\ref{tab:format-values}, while the interface of the introspection layer is documented in Appendix~\ref{apx:api}
 
 \begin{table}[ht!]
     \centering
@@ -193,69 +193,6 @@ A complete description of the formatting values see Table~\ref{tab:format-values
     \end{tabulary}
     \caption{Format symbols used in the calls to the plugin.}
     \label{tab:format-values}
-\end{table}
-
-% Please add the following required packages to your document preamble:
-% \usepackage{multirow}
-% \usepackage[table,xcdraw]{xcolor}
-% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
-\begin{table}[ht!]
-    \centering
-    \begin{tabulary}{.9\textwidth}{LLL}
-    \multicolumn{1}{c}{\textbf{Introspection API}} &
-      \multicolumn{1}{c}{\textbf{Plugin API}} &
-      \multicolumn{1}{c}{\textbf{Explanation}} \\ \hline
-     &
-      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallObject(\\     LPCSTR classname)\end{tabular} &
-      Instantiates an object of type classname, adds it to the object registry at both Introspection and Plugin level and returns the id in the plugin registry. \\
-    \multirow{-2}{*}{\begin{tabular}[c]{@{}l@{}}vtkObjectBase *CreateObject(\\     LPCSTR classname)\end{tabular}} &
-      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallObjectAndShow(\\     LPCSTR classname,\\     Float4 color,\\     bool wireframe)\end{tabular} &
-      Same as above, but also wraps it in an actor with specified color and wireframe. \\
-    \begin{tabular}[c]{@{}l@{}}LPCSTR GetProperty(\\     vtkObjectBase *pVtkObject,\\     LPCSTR propertyName)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_GetAttrAsString(\\     const int rid,\\     LPCSTR propertyName)\end{tabular} &
-      Retrieves the value of the specificed attribute and returns it as a string. \\
-    \begin{tabular}[c]{@{}l@{}}void SetProperty(\\     vtkObjectBase *pVtkObject,\\     LPCSTR propertyName,\\     LPCSTR format,\\     LPCSTR newValue)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}void VtkResrouce\_SetAttrFromString(\\     const int rid,\\     LPCSTR propertyName,\\     LPCSTR format,\\     LPCSTR newValue)\end{tabular} &
-      Sets a value from a string. The format identifies how the value has to be parsed. \\
-    \begin{tabular}[c]{@{}l@{}}LPCSTR GetDescriptor(\\     vtkObjectBase *pVtkObject)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_GetDescriptor(\\     const int rid)\end{tabular} &
-      Returns a string description of the object, in particular its attributes' name and type, comma separated. \\
-    \begin{tabular}[c]{@{}l@{}}LPCSTR CallMethod\_AsString(\\     vtkObjectBase *pVtkObject,\\     LPCSTR method,\\     LPCSTR format,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_CallMethodAsString(\\     const int rid,\\     LPCSTR method,\\     LPCSTR format,\\     const char *const *argv)\end{tabular} &
-       \\
-    \begin{tabular}[c]{@{}l@{}}vtkObjectBase *CallMethod\_AsVtkObject(\\     vtkObjectBase *pVtkObject,\\     LPCSTR method,\\     LPCSTR format,\\     LPCSTR classname,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallMethodAsVtkObject(\\     const int rid,\\     LPCSTR method,\\     LPCSTR format,\\     LPCSTR classname,\\     const char *const *argv)\end{tabular} &
-       \\
-    \begin{tabular}[c]{@{}l@{}}void CallMethod\_AsVoid(\\     vtkObjectBase *pVtkObject,\\     LPCSTR method,\\     LPCSTR format,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}void VtkResource\_CallMethodAsVoid(\\     const int rid,\\     LPCSTR method,\\     LPCSTR format,\\     const char *const *argv)\end{tabular} &
-      \multirow{-3}{*}{Calls a method on a given object and returns its reutrn value as specified in the postfix. Based on the postfix, the signatures may differ depending on further required parsing information.} \\
-    \begin{tabular}[c]{@{}l@{}}LPCSTR CallMethodPiped\_AsString(\\     vtkObjectBase *pVtkObject,\\     vector\textless{}LPCSTR\textgreater methods,\\     vector\textless{}LPCSTR\textgreater formats,\\     vector\textless{}vtkObjectBase *\textgreater refv\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}LPCSTR VtkResource\_CallMethodPipedAsString(\\     const int rid,\\     const int methodc,\\     const int formatc,\\     const char *const *methodv,\\     const char *const *formatv,\\     const char *const *argv)\end{tabular} &
-       \\
-    \begin{tabular}[c]{@{}l@{}}vtkObjectBase *CallMethodPiped\_AsVtkObject(\\     vtkObjectBase *pVtkObject,\\     vector\textless{}LPCSTR\textgreater methods,\\     vector\textless{}LPCSTR\textgreater formats,\\     LPCSTR classname,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}int VtkResource\_CallMethodPipedAsVtkobject(\\     const int rid,\\     const int methodc,\\     const int formatc,\\     LPCSTR classname,\\     const char *const *methodv,\\     const char *const *formatv,\\     const char *const *argv)\end{tabular} &
-       \\
-    \begin{tabular}[c]{@{}l@{}}void CallMethodPiped\_AsVoid(\\     vtkObjectBase *pVtkObject,\\     vector\textless{}LPCSTR\textgreater methods,\\     vector\textless{}LPCSTR\textgreater formats,\\     LPCSTR classname,\\     vector\textless{}vtkObjectBase *\textgreater refv,\\     vector\textless{}LPCSTR\textgreater argv)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}void VtkResource\_CallMethodPipedAsVoid(\\     const int rid,\\     const int methodc,\\     const int formatc,\\     const char *const *methodv,\\     const char *const *formatv,\\     const char *const *argv)\end{tabular} &
-      \multirow{-3}{*}{Calls a methods pipeline starting from a given object and returns its final reutrn value as specified in the postfix. Based on the postfix, the signatures may differ depending on further required parsing information.} \\
-    \begin{tabular}[c]{@{}l@{}}void DeleteObject(\\     vtkObjectBase *pVtkObject)\end{tabular} &
-      \begin{tabular}[c]{@{}l@{}}void VtkReousrce\_DeleteObject(\\     const int rid)\end{tabular} &
-      Deletes an object and its wrappers, freeing its memory space. \\
-    bool ErrorOccurred() &
-      bool VtkError\_Occurred() &
-      Checks whether an error occurred on the last call of VtkResource. \\
-    LPCSTR ErrorGet() &
-      LPCSTR VtkError\_Get() &
-      Returns the last error occurred on VtkResource. It should always be called, in conjunction with VtkError\_Occurred(), after any VtkResource call. \\
-     &
-      \begin{tabular}[c]{@{}l@{}}void VtkResource\_Connect(\\     LPCSTR connectionType,\\     const int sourceRid,\\     const int targetRid)\end{tabular} &
-      Connects the sources output to the targets input connection. The connection type identifies the method to be called. \\
-     &
-      \begin{tabular}[c]{@{}l@{}}void VtkResource\_AddActor(\\     const int rid,\\     Float4 color,\\     bool wireframe)\end{tabular} &
-      Adds mapper and actor to the source and adds it to the renderer.
-    \end{tabulary}
-    \caption{Introspection and Unity plugin API and how they are connected.}
-    \label{tab:vtk-plugin-api}
 \end{table}
 
 %\begin{itemize}[leftmargin=1.5truecm]
@@ -275,8 +212,28 @@ A complete description of the formatting values see Table~\ref{tab:format-values
 \section{Managed Plugin}
 \label{sec:design-managed-plugin}
 
-% \subsection{Toolbox}
-% \label{sec:design-toolbox}
+The integration of VTK with Unity makes use of both a native plugin, which we already discussed, and a managed plugin, which is the focus of this section. In particular, this part of the system is responsibile for making the native plugin API more user-friendly, and connecting the rendering cycles of the two rendering contexts. The setup is almost identical to the VtkToUnity plugin, with a different API for VTK.
 
-% \subsection{Composer}
-% \label{sec:design-uicomposer}
+The basic API of the managed plugin is identical to the native plugin API, with the exception of the usage of the \verb|Marshal|, a .NET library used to work with unmanaged memory areas. In Unity, this library is used in particular to handle passing paramters back and forth between the managed and native parts of the environment, like defining how strings have to be handled passing down to C++. In our implementation we use this exclusively to specify strings to be handled as long pointer strings, as we represent them as \verb|LPCSTR| (Long-Pointer Constant STRing) in our C++ code.
+
+As a further design discussion, we present now the Toolbox and Composer components that are part of the managed plugin. As the UI is out of the scope of this thesis, we will not discuss particular implementations of these components, as they will be presented in a separate thesis. Designing these components, we mirror our approach to accessing VTK, as our drivers remain the same. In particular, the Toolbox is the component that mirrors the Adapters registry, while the Composer mirrors the Introspector.
+
+\subsection{Toolbox}
+\label{sec:design-toolbox}
+
+As UIs are in general more complex than accessing introspectively a library, as they are made of more components and constrained by interaction and usage limits that depend on the device being used, the environment, the input devices and so on, the ability to introduce custom-tailored UI components is necessary. Thus, we propose the usage of a registry of UI prefabs developed in Unity as first-tier access to the UI of the environment.
+
+A registry mapping from the classname to the prefab factory \verb|IComponentFactory| acts as the access-point for the UI instantiation. When a part of the pipeline is created, the \verb|FactoryManager| first checks the registry to check whether a factory for the entire UI exists. If this exists, the factory is called and a \verb|Create| function generates the UI based on the prefab. The UI is then linked to the particular part of the pipeline by the manager in order to keep track of the changes and to avoid the changes being either lost or set to the wrong VTK object. This is also to have the UI ready but not shown, and only made visible through \verb|Show| when necessary and hidden through \verb|Hide| when changing focus.
+
+% TODO: write more
+
+\subsection{Composer}
+\label{sec:design-uicomposer}
+
+If the Toolbox fails, a generic system to generate UIs gets called. This requires more resources and time to execute, as it takes the descriptor of the VTK object, which maps the names of the attributes to their types, and then creates a minimal UI with this information. The Composer uses a registry of minimal components that are part of the environment that implement interfaces to edit native simple values, e.g. integers, decimals, booleans, strings and so on. These components are also registered with the Toolbox, for faster access.
+
+The generated components this way are then used to instantiate a \verb|ComposedUI| object, that contains the information of the different parts that make the UI and then add this to the Composer's registry, acting as a \verb|IComponentFactory| for later calls of the \verb|FactoryManager| on the same classname to avoid generating the same factory twice.
+
+In order to accelerate and expand the Composer's ability, the mappings are not hardcoded; the Composer still uses the Toolbox as a lookup for the basic parts used to generate the UI, and thus custom-tailored basic UIs can be added to the Toolbox to override the natively implemented ones.
+
+% TODO: write more

@@ -63,6 +63,17 @@
 %for highlighting findings
 \usepackage{tcolorbox}
 
+\usepackage{fancyvrb}
+\DefineVerbatimEnvironment{Code}{BVerbatim}{baseline=t}
+
+\usepackage{multicol}
+\usepackage{lscape}
+\usepackage{array}
+\usepackage{alltt}
+\usepackage{xparse}
+\usepackage{setspace}
+\newenvironment{codify}{\noindent\begin{spacing}{0.8}\begin{alltt}\vskip-4.0ex}{\end{alltt}\end{spacing}\vskip-2.5ex\noindent\ignorespacesafterend}%
+
 % for highlighting code examples
 \usepackage{listings}
 
@@ -298,10 +309,6 @@
 
 %make it fit more nicely
 \setlength\extrarowheight{2pt}
-
-%for subfiguring
-\usepackage{caption}
-\usepackage{subcaption}
 
 
 \input{acronym}

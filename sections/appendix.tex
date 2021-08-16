@@ -244,7 +244,7 @@ VtkAdapter* VtkAdapterUtility::GetAdapter(
 \chapter{Python/C++ Performance tests}
 \label{apx:streamtracer-performance-tests}
 
-To evaluate the best approach towards introducing introspection into our project, we developed four tests that determine the performances of Python directly accessing \acrshort{vtk}, Python using introspection to access \acrshort{vtk}, C++ using the embedded Python interpreter to directly access \acrshort{vtk} and C++ using the embedded Python interpreter using introspection to access \acrshort{vtk}, the code for which is shown respectively in Listing~\ref{lst:py-native-vtk}, Listing~\ref{lst:py-intro-vtk}, Listing~\ref{lst:cpp-native-vtk} and Listing~\ref{lst:cpp-intro-vtk}. In both Python and C++ we use helper functions that time the execution of the functions we call. Their implementations are respectively shown in Listings~\ref{lst:py-timed-execution} and Listings~\ref{lst:cpp-timed-execution}.
+To evaluate the best approach towards introducing introspection into our project, we developed four tests that determine the performances of Python directly accessing \acrshort{vtk}, Python using introspection to access \acrshort{vtk}, C++ using the embedded Python interpreter to directly access \acrshort{vtk} and C++ using the embedded Python interpreter using introspection to access \acrshort{vtk}, the code for which is shown respectively in Listing~\ref{lst:py-native-vtk}, Listing~\ref{lst:py-intro-vtk}, Listing~\ref{lst:cpp-native-vtk} and Listing~\ref{lst:cpp-intro-vtk}. In both Python and C++ we use helper functions that time the execution of the functions we call. Their implementations are respectively shown in Listings~\ref{lst:py-timed-execution} and Listings~\ref{lst:cpp-timed-execution}. Finally, the introspective C++ code uses functions prefixed with \verb|PyVtk_| which are the same functions presented in our plugin's implementation, adapted not to be run inside a Unity plugin\footnote{The full code is available on GitHub at \url{https://github.com/EnlitHamster/Python-Embedding}.}
 
 \begin{python}[label=lst:py-native-vtk,caption={Native Python VTK benchmark script},aboveskip=20pt]
 reader = timed_execution("reader_inst", vtkStructuredGridReader)
@@ -291,7 +291,193 @@ outline = timed_execution("outline_inst", introspector.createVtkObject, ("vtkStr
 timed_execution("outline_setinputconn_reader_getoutputport", introspector.vtkInstanceCall, (outline, "SetInputConnection", (introspector.getVtkObjectOutputPort(reader),)))
 \end{python}
 
-\begin{python}[label=lst:py-timed-execution,caption={timed\_execution Python function},aboveskip=20pt]
+\begin{cpp}[label=lst:cpp-native-vtk,caption={Native C++ VTK benchmark source code.},aboveskip=20pt]
+PyObject *init_python()
+{
+	/* Activating virtual environment */
+	const wchar_t *sPyHome = L"venv";
+	Py_SetPythonHome(sPyHome);
+
+	/* Initializing Python environment and setting PYTHONPATH. */
+	Py_Initialize();
+
+	/* Both the "." and cwd notations are left in for security, as after being built in
+		a DLL they may change. */
+	PyRun_SimpleString("import sys\nimport os");
+	PyRun_SimpleString("sys.path.append( os.path.dirname(os.getcwd()) )");
+	PyRun_SimpleString("sys.path.append(\".\")");
+
+	/* Decode module from its name. Returns error if the name is not decodable. */
+	PyObject *pVtkModuleName = PyUnicode_DecodeFSDefault("vtk");
+	if (pVtkModuleName == NULL)
+	{
+		fprintf(stderr, "Fatal error: cannot decode module name\n");
+		return NULL;
+	}
+
+	/* Imports the module previously decoded. Returns error if the module is not found. */
+	PyObject *pVtkModule = PyImport_Import(pVtkModuleName);
+	Py_DECREF(pVtkModuleName);
+	if (pVtkModule == NULL)
+	{
+		if (PyErr_Occurred())
+		{
+			PyErr_Print();
+		}
+		fprintf(stderr, "Failed to load \"Introspector\"\n");
+		return NULL;
+	}
+
+	return pVtkModule;
+}
+
+
+PyObject *inst_vtkobj(
+	PyObject *pVtkModule,
+	LPCSTR classname)
+{
+	/* Looks for the Introspector class in the module. If it does not find it, returns and error. */
+	PyObject* pVtkClass = PyObject_GetAttrString(pVtkModule, classname);
+	if (pVtkClass == NULL || !PyCallable_Check(pVtkClass))
+	{
+		if (PyErr_Occurred())
+		{
+			PyErr_Print();
+		}
+		fprintf(stderr, "Cannot find class \"Introspector\"\n");
+		if (pVtkClass != NULL)
+		{
+			Py_DECREF(pVtkClass);
+		}
+		return NULL;
+	}
+
+	/* Instantiates an Introspector object. If the call returns NULL there was an error
+		creating the object, and thus it returns error. */
+	PyObject *pInstance = PyObject_CallObject(pVtkClass, NULL);
+	Py_DECREF(pVtkClass);
+	if (pInstance == NULL)
+	{
+		if (PyErr_Occurred())
+		{
+			PyErr_Print();
+		}
+		fprintf(stderr, "Introspector instantiation failed\n");
+		return NULL;
+	}
+
+	return pInstance;
+}
+
+
+void test_native()
+{
+	PyObject *pVtkModule = timed_execution<PyObject *>("python_inst", init_python);
+
+	PyObject *pReader = timed_execution<PyObject *>("reader_inst", inst_vtkobj, pVtkModule, "vtkStructuredGrid");
+	timed_execution_v("reader_setfile", PyObject_CallMethod, pReader, "SetFileName", "s", "density.vtk");
+	timed_execution_v("reader_update", PyObject_CallMethod, pReader, "Update", "");
+
+	PyObject *pSeeds = timed_execution<PyObject *>("seeds_inst", inst_vtkobj, pVtkModule, "vtkPointSource");
+	timed_execution_v("seeds_setradius", PyObject_CallMethod, pSeeds, "SetRadius", "d", 3.0);
+	PyObject *pOutput = timed_execution<PyObject *>("reader_getoutput", PyObject_CallMethod, pReader, "GetOutput", "");
+	PyObject *pCenter = timed_execution<PyObject *>("output_getcenter", PyObject_CallMethod, pOutput, "GetCenter", "");
+	timed_execution_v("seeds_setcenter", PyObject_CallMethod, pSeeds, "SetCenter", "(d,d,d)", pCenter);
+	timed_execution_v("seeds_setnumberofpoints", PyObject_CallMethod, pSeeds, "SetNumberOfPoints", "i", 100);
+
+	PyObject *pStreamer = timed_execution<PyObject *>("streamer_inst", inst_vtkobj, pVtkModule, "vtkStreamTracer");
+	PyObject *pReaderPort = timed_execution<PyObject *>("reader_getoutputport", PyObject_CallMethod, pReader, "GetOutputPort", "i", 0);
+	PyObject *pSeedsPort = timed_execution<PyObject *>("seeds_getoutputport", PyObject_CallMethod, pSeeds, "GetOutputPort", "i", 0);
+	timed_execution_v("streamer_setinputconn", PyObject_CallMethod, pStreamer, "SetInputConnection", "O", pReaderPort);
+	timed_execution_v("streamer_setsourceconn", PyObject_CallMethod, pStreamer, "SetSourceConnection", "O", pSeedsPort);
+	timed_execution_v("streamer_setmaxpropagation", PyObject_CallMethod, pStreamer, "SetMaximumPropagation", "i", 1000);
+	timed_execution_v("streamer_setinitialintegstep", PyObject_CallMethod, pStreamer, "SetInitialIntegrationStep", "d", 0.1);
+	timed_execution_v("streamer_setintegdirboth", PyObject_CallMethod, pStreamer, "SetIntegrationDirectionToBoth", "");
+
+	PyObject *pOutline = timed_execution<PyObject *>("outline_inst", inst_vtkobj, pVtkModule, "vtkStructuredGridOutlineFilter");
+	timed_execution_v("outline_setinputconn", PyObject_CallMethod, pOutline, "SetInputConnection", "O", pReaderPort);
+
+	Py_XDECREF(pVtkModule);
+	Py_XDECREF(pReader);
+	Py_XDECREF(pSeeds);
+	Py_XDECREF(pStreamer);
+	Py_XDECREF(pOutline);
+
+	timed_execution_v("python_fin", Py_Finalize);
+}
+\end{cpp}
+
+\begin{cpp}[label=lst:cpp-intro-vtk,caption={Introspective C++ VTK benchmark source code.},aboveskip=20pt]
+void test_introspection()
+{
+
+	PyObject *pIntrospector = timed_execution<PyObject *>("interpreter_init", PyVtk_InitIntrospector);
+
+	vtkObjectBase
+		*pReader = timed_execution<vtkObjectBase *>("reader_inst", PyVtk_CreateVtkObject, pIntrospector, "vtkStructuredGridReader"),
+		*pSeeds = timed_execution<vtkObjectBase *>("seeds_inst", PyVtk_CreateVtkObject, pIntrospector, "vtkPointSource"),
+		*pStreamer = timed_execution<vtkObjectBase *>("streamer_inst", PyVtk_CreateVtkObject, pIntrospector, "vtkStreamTracer"),
+		*pOutline = timed_execution<vtkObjectBase *>("outline_inst", PyVtk_CreateVtkObject, pIntrospector, "vtkStructuredGridOutlineFilter");
+
+	timed_execution_v("reader_setfile", PyVtk_SetVtkObjectProperty, pIntrospector, pReader, "FileName", "s", "density.vtk");
+
+	timed_execution_v("reader_update", PyVtk_ObjectMethod, // pReader->Update()
+		pIntrospector,
+		pReader,
+		"Update",
+		"",
+		std::vector<vtkObjectBase *>(),
+		std::vector<LPCSTR>());
+
+
+	PyObject *pOutput = timed_execution<PyObject *>("reader_getoutput", PyVtk_ObjectMethod, // pReader->GetOutput()
+		pIntrospector,
+		pReader,
+		"GetOutput",
+		"",
+		std::vector<vtkObjectBase *>(),
+		std::vector<LPCSTR>());
+
+	LPCSTR center = timed_execution<LPCSTR>("reader_getoutput_getcenter", PyVtk_PipedObjectMethodAsString, // pReader->GetOutput()->GetCenter()
+		pIntrospector,
+		pReader,
+		std::vector<LPCSTR>({ "GetOutput", "GetCenter" }),
+		std::vector<LPCSTR>({ "", "" }),
+		std::vector<vtkObjectBase *>(),
+		std::vector<LPCSTR>());
+
+	timed_execution_v("seeds_setradius", PyVtk_SetVtkObjectProperty, pIntrospector, pSeeds, "Radius", "f", "3.0");
+	timed_execution_v("seeds_setcenter", PyVtk_SetVtkObjectProperty, pIntrospector, pSeeds, "Center", "f3", center);
+	timed_execution_v("seeds_setnumberofpoints", PyVtk_SetVtkObjectProperty, pIntrospector, pSeeds, "NumberOfPoints", "d", "100");
+
+	vtkAlgorithmOutput *pSeedsPort = timed_execution<vtkAlgorithmOutput *>("seeds_getoutputport", PyVtk_GetOutputPort, pIntrospector, pSeeds);
+
+	timed_execution_v("streamer_setinputconn_reader", PyVtk_ConnectVtkObject, pIntrospector, pReader, (vtkAlgorithm *)pStreamer);
+	timed_execution_v("streamer_setsourceconn_seeds", PyVtk_ObjectMethod, // pStreamer->SetSourceConnection(pSeeds->GetOutputPort(0))
+		pIntrospector,
+		pStreamer,
+		"SetSourceConnection",
+		"o",
+		std::vector<vtkObjectBase *>({ pSeedsPort }),
+		std::vector<LPCSTR>());
+
+	timed_execution_v("streamer_setmaxpropagation", PyVtk_SetVtkObjectProperty, pIntrospector, pStreamer, "MaximumPropagation", "d", "100");
+	timed_execution_v("streamer_setinitialintegstep", PyVtk_SetVtkObjectProperty, pIntrospector, pStreamer, "InitialIntegrationStep", "f", "0.1");
+	timed_execution_v("streamer_setintegdirboth", PyVtk_ObjectMethod, // pStreamer->SetIntegrationDirectionToBoth()
+		pIntrospector,
+		pStreamer,
+		"SetIntegrationDirectionToBoth",
+		"",
+		std::vector<vtkObjectBase *>(),
+		std::vector<LPCSTR>());
+
+	timed_execution_v("outline_setinputconn", PyVtk_ConnectVtkObject, pIntrospector, pReader, (vtkAlgorithm *)pOutline);
+
+	timed_execution_v("interpreter_fin", PyVtk_FinalizeIntrospector, pIntrospector);
+}
+\end{cpp}
+
+\begin{python}[label=lst:py-timed-execution,caption={timed\_execution Python function.},aboveskip=20pt]
 time_execution_data = {}
 def timed_execution(name, func, args = ()):
 	t_start = perf_counter()
@@ -299,5 +485,303 @@ def timed_execution(name, func, args = ()):
 	time_execution_data[name] = perf_counter() - t_start
 	return r
 \end{python}
+
+\begin{cpp}[label=lst:cpp-timed-execution,caption={timed\_execution Cpp functions.},aboveskip=20pt]
+typedef std::chrono::high_resolution_clock::time_point time_var;
+
+#define DURATION(a) std::chrono::duration_cast<std::chrono::nanoseconds>(a).count()
+#define TIME_NOW() std::chrono::high_resolution_clock::now()
+
+std::unordered_map<LPCSTR, double> time_execution_data;
+
+template<typename R, typename F, typename... A>
+R timed_execution(LPCSTR name, F function, A&& ...argv)
+{
+	time_var start = TIME_NOW();
+	R r = function(std::forward<A>(argv)...);
+	time_execution_data.insert(std::make_pair(name, DURATION(TIME_NOW() - start) / 1000000000.0f));
+	return r;
+}
+
+template<typename F, typename... A>
+void timed_execution_v(LPCSTR name, F function, A&& ...argv)
+{
+	time_var start = TIME_NOW();
+	function(std::forward<A>(argv)...);
+	time_execution_data.insert(std::make_pair(name, DURATION(TIME_NOW() - start) / 1000000000.0f));
+}	
+\end{cpp}
+
+\chapter{Interfaces' documentation}
+\label{apx:api}
+
+In the following pages, we present the API of different parts of the library, in particular Table~\ref{tab:plugin-api} describes the API the plugin exposes to Unity, Table~\ref{tab:introspective-api} the API the introspector exposes to the Infrastructure layer.
+
+\begin{landscape}
+	\begin{longtable}[c]{
+			>{\raggedright\arraybackslash}p{0.4\linewidth}
+			>{\raggedright\arraybackslash}p{0.5\linewidth}
+		}
+		\multicolumn{1}{c}{\textbf{Function signature}} &
+		\multicolumn{1}{c}{\textbf{Explenation}} 
+		\\ \hline
+	\endhead
+	%
+	\begin{codify}
+	int VtkResource_CallObject(
+		LPCSTR classname)
+	\end{codify} &
+	Instantiates an object of type classname, adds it to the object registry at both Introspection and Plugin level and returns the id in the plugin registry.
+	\\
+	\begin{codify}
+	int VtkResource_CallObjectAndShow(
+		LPCSTR classname,
+		Float4 color,
+		bool wireframe)
+	\end{codify} &
+	Same as above, but also wraps it in an actor with specified color and wireframe.
+	\\
+	\begin{codify}
+	LPCSTR VtkResource_GetAttrAsString(
+		const int rid,
+		LPCSTR propertyName)
+	\end{codify} &
+	Retrieves the value of the specificed attribute and returns it as a string.
+	\\
+	\begin{codify}
+	void VtkResrouce_SetAttrFromString(
+		const int rid,
+		LPCSTR propertyName,
+		LPCSTR format,
+		LPCSTR newValue)
+	\end{codify} &
+	Sets a value from a string. The format identifies how the value has to be parsed.
+	\\
+	\begin{codify}
+	LPCSTR VtkResource_GetDescriptor(
+		const int rid)
+	\end{codify} &
+	Returns a string description of the object, in particular its attributes' name and type, comma separated.
+	\\
+	\begin{codify}
+	LPCSTR VtkResource_CallMethodAsString(
+		const int rid,
+		LPCSTR method,
+		LPCSTR format,
+		const char *const *argv)
+	\end{codify} &
+	Calls a method on a given object and returns its return value as a string.
+	\\
+	\begin{codify}
+	int VtkResource_CallMethodAsVtkObject(
+		const int rid,
+		LPCSTR method,
+		LPCSTR format,
+		LPCSTR classname,
+		const char *const *argv)
+	\end{codify} &
+	Calls a method on a given object and returns its return value as a VTK object pointer.
+	\\
+	\begin{codify}
+	void VtkResource_CallMethodAsVoid(
+		const int rid,
+		LPCSTR method,
+		LPCSTR format,
+		const char *const *argv)
+	\end{codify} &
+	Calls a method on a given object and ignores the return value.
+	\\
+	\begin{codify}
+	LPCSTR VtkResource_CallMethodPipedAsString(
+		const int rid,
+		const int methodc,
+		const int formatc,
+		const char *const *methodv,
+		const char *const *formatv,
+		const char *const *argv)
+	\end{codify} &
+	Calls a methods pipeline starting from a given object and returns its final reutrn value as a string.
+	\\
+	\begin{codify}
+	int VtkResource_CallMethodPipedAsVtkobject(
+		const int rid,
+		const int methodc,
+		const int formatc,
+		LPCSTR classname,
+		const char *const *methodv,
+		const char *const *formatv,
+		const char *const *argv)
+	\end{codify} &
+	Calls a methods pipeline starting from a given object and returns its final reutrn value as a VTK object pointer.
+	\\
+	\begin{codify}
+	void VtkResource_CallMethodPipedAsVoid(
+		const int rid,
+		const int methodc,
+		const int formatc,
+		const char *const *methodv,
+		const char *const *formatv,
+		const char *const *argv)
+	\end{codify} &
+	Calls a methods pipeline starting from a given object and ignores its final return value.
+	\\
+	\begin{codify}
+	void VtkReousrce_DeleteObject(
+		const int rid)
+	\end{codify} &
+	Deletes an object and its wrappers, freeing its memory space.
+	\\
+	\begin{codify}
+	void VtkResource_Connect(
+		LPCSTR connectionType,
+		const int sourceRid,
+		const int targetRid)
+	\end{codify} &
+	Connects the sources output to the targets input connection. The connection type identifies the method to be called.
+	\\
+	\begin{codify}
+	void VtkResource_AddActor(
+		const int rid,
+		Float4 color,
+		bool wireframe)
+	\end{codify} &
+	Adds mapper and actor to the source and adds it to the renderer.
+	\\
+	\begin{codify}
+	bool VtkError_Occurred()
+	\end{codify} &
+	Checks whether an error occurred on the last call of VtkResource.
+	\\
+	\begin{codify}
+	LPCSTR VtkError_Get()
+	\end{codify} &
+	Returns the last error occurred on VtkResource. It should always be called, in conjunction with \verb|VtkError_Occurred()|, after any VtkResource call.
+	\\
+	\caption{Plugin API exposed to Unity.}
+	\label{tab:plugin-api}\\
+	\end{longtable}
+\end{landscape}
+
+\begin{landscape}
+	\begin{longtable}[c]{
+			>{\raggedright\arraybackslash}p{0.4\linewidth}
+			>{\raggedright\arraybackslash}p{0.5\linewidth}
+		}
+		\multicolumn{1}{c}{\textbf{Function signature}} &
+		\multicolumn{1}{c}{\textbf{Explenation}} 
+		\\ \hline
+	\endhead
+	%
+	\begin{codify}
+	vtkObjectBase *CreateObject(
+		LPCSTR classname)
+	\end{codify} &
+	Instantiates an object of class classname and adds it to the mapping from VTK object to Python object.
+	\\
+	\begin{codify}
+	LPCSTR GetProperty(
+		vtkObjectBase *pVtkObject,
+		LPCSTR propertyName)
+	\end{codify} &
+	Retrieves the value of the specificed attribute and returns it as a string.
+	\\
+	\begin{codify}
+	void SetProperty(
+		vtkObjectBase *pVtkObject,
+		LPCSTR propertyName,
+		LPCSTR format,
+		LPCSTR newValue)
+	\end{codify} &
+	Sets a value from a string. The format identifies how the value has to be parsed.
+	\\
+	\begin{codify}
+	LPCSTR GetDescriptor(
+		vtkObjectBase *pVtkObject)
+	\end{codify} &
+	Returns a string description of the object, in particular its attributes' name and type, comma separated.
+	\\
+	\begin{codify}
+	LPCSTR CallMethod_AsString(
+		vtkObjectBase *pVtkObject,
+		LPCSTR method,
+		LPCSTR format,
+		vector<vtkObjectBase *> refv,
+		vector<LPCSTR> argv)
+	\end{codify} &
+	Calls a method on a given object and returns its return value as a string.
+	\\
+	\begin{codify}
+	vtkObjectBase *CallMethod_AsVtkObject(
+		vtkObjectBase *pVtkObject,
+		LPCSTR method,
+		LPCSTR format,
+		LPCSTR classname,
+		vector<vtkObjectBase *> refv,
+		vector<LPCSTR> argv)
+	\end{codify} &
+	Calls a method on a given object and returns its return value as a VTK object pointer.
+	\\
+	\begin{codify}
+	void CallMethod_AsVoid(
+		vtkObjectBase *pVtkObject,
+		LPCSTR method,
+		LPCSTR format,
+		vector<vtkObjectBase *> refv,
+		vector<LPCSTR> argv)
+	\end{codify} &
+	Calls a method on a given object and ignores the return value.
+	\\
+	\begin{codify}
+	LPCSTR CallMethodPiped_AsString(
+		vtkObjectBase *pVtkObject,
+		vector<LPCSTR> methods,
+		vector<LPCSTR> formats,
+		vector<vtkObjectBase *> refv
+		vector<LPCSTR> argv)
+	\end{codify} &
+	Calls a methods pipeline starting from a given object and returns its final reutrn value as a string.
+	\\
+	\begin{codify}
+	vtkObjectBase *CallMethodPiped_AsVtkObject(
+		vtkObjectBase *pVtkObject,
+		vector<LPCSTR> methods,
+		vector<LPCSTR> formats,
+		LPCSTR classname,
+		vector<vtkObjectBase *> refv,
+		vector<LPCSTR> argv)
+	\end{codify} &
+	Calls a methods pipeline starting from a given object and returns its final reutrn value as a VTK object pointer.
+	\\
+	\begin{codify}
+	void CallMethodPiped_AsVoid(
+		vtkObjectBase *pVtkObject,
+		vector<LPCSTR> methods,
+		vector<LPCSTR> formats,
+		LPCSTR classname,
+		vector<vtkObjectBase *> refv,
+		vector<LPCSTR> argv)
+	\end{codify} &
+	Calls a methods pipeline starting from a given object and ignores its final return value.
+	\\
+	\begin{codify}
+	void DeleteObject(
+		vtkObjectBase *pVtkObject)
+	\end{codify} &
+	Deletes an object and its wrappers, freeing its memory space.
+	\\
+	\begin{codify}
+	bool ErrorOccurred()
+	\end{codify} &
+	Checks whether an error was registered in the error buffer.
+	\\
+	\begin{codify}
+	LPCSTR ErrorGet()
+	\end{codify} &
+	Returns the last error occurred on an introspection call.
+	\\
+	\caption{Introspective component's API.}
+	\label{tab:introspective-api}\\
+	\end{longtable}
+\end{landscape}
 
 \end{appendices}
