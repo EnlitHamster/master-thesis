@@ -27,7 +27,7 @@ These toolkits come in a variety of flavours, languages and/or wrappings and it 
 
 \acrshort{vtk} has three different stages of the pipeline which combined return a visualization rendering. The first stage is the generation or the import of a data source and transforming the raw data in some more readable raw data if needed, like structuring it in a model. Subsequently, the raw data is then transformed through filters that compose the data in order for it to be visualized, creating the actual visualization. Finally, the visualization is rendered through the application of mappers that transform the computational representation into a graphical representation. An example of a Quadric 3D function is shown in Figure~\ref{fig:quadric-render-pipeline}, based on an example proposed in the \acrshort{vtk} example repository\footnote{Available at \url{https://kitware.github.io/vtk-examples/site/Cxx/VisualizationAlgorithms/ContourQuadric/}.}, the exact code is presented in Appendix~\ref{apx:quadric-vtk}.
 
-\begin{figure}[ht!]
+\begin{figure}[t]
     \centering
     \begin{subfigure}{\textwidth}
         \centering
@@ -39,12 +39,12 @@ These toolkits come in a variety of flavours, languages and/or wrappings and it 
         \caption{}
     \end{subfigure}
     \caption{VTK visualization (a) and pipeline (b) of a sampled Quadric function.}
-        \label{fig:quadric-render-pipeline}
+    \label{fig:quadric-render-pipeline}
 \end{figure}
 
 Upon \acrshort{vtk}, a number of wrappers have been produced, allowing the library to be used not only in C++, but also in Java, Python, Tcl and the .NET Framework\footnote{\url{https://vtk.org/Wiki/VTK/Wrappers}}. These wrappers allow the usage of the \textit{wrappable} code of the library from one of the aforementioned languages. This process is to be manually done at build time of the library or using one of the wrapping tools accessible from the documentation of \acrshort{vtk}.
 
-\section{Game Engines}
+\section{Unity Game Engine}
 
 Game Engines can be defined as "\textit{software frameworks for game development}" \cite{politowski2021game}. These frameworks though are not all equal, and as such we focus on those defined as \textit{\acrfull{gpge}s}, which we define as \textit{frameworks for the creation of virtual environments}, which is a fundamental component of games. This also means that these softwares are not restricted to game development purposes, but are used for a variety of projects that entail the simulation of virtual worlds. These frameworks perfectly fit our requirement of creating an immersive and interactive environment for our \acrshort{vr} IDE.
 
@@ -54,6 +54,17 @@ We chose to use Unity due to the number of advantages that come with the engine.
 
 The documentation for the engine is comprehensive and freely available with a number of examples that facilitate development, and its API supports the implementation of custom native C++ code through easy drag-n-drop of the shared libraries in the editor and an intuitive interface to import its functionalities in C\#. Finally, thanks to OpenGL 2 context sharing, it is possible to render through external code, such as \acrshort{vtk}, which suites our need to visualize objects created in native C++ libraries.
 
+\section{HTC Vive Headmounted Display}
+
+Our objective is to have a generic environment that can be used with any HMD. For our development, however, we focus on the HTC Vive series as these are the HMDs we have access for development and testing. These VR headsets have a 90 Hz refresh rate on the entire line and can be used with controllers, allowing for interactive usage. In particular we focus on the HTC Vive, that we use for both development and testing. This headset is shown in Figure~\ref{fig:htc-vive}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=.7\textwidth]{pictures/htc_vive.jpg}
+    \caption{HTC Vive HMD with cameras and controllers.}
+    \label{fig:htc-vive}
+\end{figure}
+
 \section{Related Work}
 \label{sec:related-work}
 
@@ -61,7 +72,7 @@ A number of projects already attempted interfacing visualization libraries with 
 
 \paragraph{OculusVTK Visual editor}
 
-In 2016 a similar attempt to create a visual editor for OculusVTK was carried out in Python \cite{dreuning_visual_2016}. The solution allowed the user to create simple pipelines and manipulate them within a visual environment and see the result of the operations. The authors carry out a number of experiments with pipelines, varying from simple arrows to stream tracers and a DICOM image rendering, where results showed a consistent 58-60 FPS were achieved.
+, developed in 2016, is a similar attempt to create a visual editor for OculusVTK carried out in Python \cite{dreuning_visual_2016}. The solution allows the user to create simple pipelines and manipulate them within a visual environment and see the result of the operations. The authors carry out a number of experiments with pipelines, varying from simple arrows to stream tracers and a DICOM image rendering, where results showed a consistent 58-60 FPS were achieved.
 
 While the objectives of the authors are quite similar to ours, they do not focus on the same constraints we set for our project, i.e. performance and the designing of a distributable and parallelizable architecture. Furthermore, their solution focuses on Oculus, whereas our solution aims at being headset-agnostic.
 
@@ -77,7 +88,7 @@ Furthermore, the Python scripts are limited to only working through introspectio
 \paragraph{VtkToUnity} is the closest attempt to our project was presented in 2018 by Wheeler et al. \\
 \cite{wheeler_virtual_2018}. who developed a Native Unity plugin that allowed the user to exploit \acrshort{vtk}'s features in the engine's scripts\footnote{\url{https://gitlab.com/3dheart_public/vtktounity}}. The plugin's aim is to introduce volume rendering through \acrshort{vtk} and uses the OpenGL context sharing technology to enable the visualization library to directly render within the Unity scene. The plugin's approach is to add a rendering callback function after the transparency rendering stage, as optimal for volume rendering. The produced architecture is summarized in Figure~\ref{fig:wheeler-architecture} 
 
-\begin{figure}[ht!]
+\begin{figure}[t]
     \centering
     \includegraphics[width=\textwidth]{pictures/wheeler_arch.PNG}
     \caption{Wheeler et al.'s rendering architecture.}

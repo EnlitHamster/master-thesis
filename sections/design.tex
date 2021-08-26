@@ -27,7 +27,7 @@ The final architecture is composed of a total of six components, as shown in Fig
     \item A \textbf{Unity UI Library}, comprised of a \textbf{UI Toolbox}, which is made of custom UIs created to tailor specific usages, and a \textbf{UI Composer}, which uses a minimal set of UI components to generate UIs on-the-fly.
 \end{itemize}
 
-\begin{figure}
+\begin{figure}[t]
     \centering
     \includegraphics[width=\textwidth]{pictures/Architecture-high-level-transparent.png}
     \caption{Components and their interconnections.}
@@ -52,17 +52,7 @@ As such, we base the infrastructure layer on a refactoring of the VtkToUnity plu
 
 %As we expect the interfacing to be slower, especially with the introspection component, the infrastructure layer will also have a cache system to store and retrieve the latest hits and directly call the precise function rather than going through with the introspecting dispatch system.
 
-We use the same approach as in the VtkToUnity plugin to create the C++ native plugin and its interfacing with Unity. Our implementation is then reduced to the minimal API necessary to use the \acrshort{vtk} functionality expressed by the interface mechanisms described in Section~\ref{sec:design-interfaces}. Our objective is to make the calls as general as possible, giving the user the most liberty and access as possible. For the naming and implementation, we follow a similar design as the Python/C API \cite{python_c_api}. The interface is comprised of the following methods:
-
-% TODO: review the functions and update to new interface
-\begin{itemize}[leftmargin=1.5truecm]
-    \setlength{\itemindent}{-1truecm}
-    \item[] \verb|AddVtkObject(objectName, rgbaColour, wireframe, objectId)| takes as input a string representation of the \acrshort{vtk} object to instantiate, the rendering colour and a flag to show the wireframe, and returns the objectId of the shape, which is its index in the object registry that the infrastructure layer keeps;
-    \item[] \verb|GetVtkObjectProperty(objectId, propertyName, returnValue)| takes as input the object's index in the registry and the name of the property, accesses the \acrshort{vtk} interface as described in Section~\ref{sec:design-interfaces}, and returns the string representation of the value;
-    \item[] \verb|SetVtkObjectProperty(objectId, propertyName, newValue)| takes as input the object's index in the registry, the name of the property to change and the new value and accesses the \acrshort{vtk} interface to set the object's attribute to the new value;
-    \item[] \verb|GetVtkObjectDescriptor(objectId)| takes as input the object's index in the registry, and returns a string representation of the attributes of the object; this is used then in the UI composer to generate the UI for manipulating the objects;
-    \item[] \verb|RemoveVtkObject(objectId)| takes as input the object's index in the registry, and deletes it.
-\end{itemize}
+We use the same approach as in the VtkToUnity plugin to create the C++ native plugin and its interfacing with Unity. Our implementation is then reduced to the minimal API necessary to use the \acrshort{vtk} functionality expressed by the interface mechanisms described in Section~\ref{sec:design-interfaces}. Our objective is to make the calls as general as possible, giving the user the most liberty and access as possible. For the naming and implementation, we follow a similar design as the Python/C API \cite{python_c_api}. The interface is documented in Appendix~\ref{apx:api}
 
 \section{VTK Interfaces}
 \label{sec:design-interfaces}
@@ -76,7 +66,6 @@ We discuss both access tiers and how each of them is designed. Both these subsys
 
 The first access tier for \acrshort{vtk} is a set of custom adapters that users can define, expand and modify and get built with the solution. These adapters have the objective of allowing the user to customize their system and tailor it to their needs. The user can define different ways in which the native plugin interacts with \acrshort{vtk}. Particular use cases for adapters are:
 
-%TODO: implementation of other two use cases
 \begin{enumerate}
     \item The creation of custom loggers for diagnostics and flow analysis;
     \item Implementation of \textit{templates} at native level that enable faster instantiation and define their own parameters and routines;
@@ -89,33 +78,65 @@ Optionally, the adapter can implement rendering information in case the adapter 
 
 The main driver behind adapters is to make the solution maintainable as well as generic. We do not foresee all potential uses of the adapters, as it is not our objective. Their implementation is kept to the bare minimum and some use cases are presented which are, to us, the most obvious. We set out to not limit the potential for these component, and require the implementation of what is needed to make it work.
 
-In order to implement the defined adapters, we first define a basic adapter class which is used for only use case number 1, i.e. the adapting of \acrshort{vtk} defined objects. This class does not define rendering and update information, as these are already defined by \acrshort{vtk}. We implement \verb|VtkAdapter| as shown in listing~\ref{lst:vtkadapter}
+In order to implement the defined adapters, we first define a basic adapter class which is used for only use case number 1, i.e. the adapting of \acrshort{vtk} defined objects. This class does not define rendering and update information, as these are already defined by \acrshort{vtk}. We implement \verb|vtkAdapter| as shown in listing~\ref{lst:vtkadapter}
 
-\begin{figure}
+\begin{figure}[ht!]
     \centering
     \begin{cpp}[label=lst:vtkadapter,caption={vtkAdapter class}]
-class VtkAdapter
+class vtkAdapter
 {
 public:
-	template <typename T> using getter = std::stringstream(T::*)(vtkSmartPointer<vtkActor>);
-	template <typename T> using setter = void (T::*)(vtkSmartPointer<vtkActor>, LPCSTR);
+    template <typename T> using getter = std::stringstream(T::*)(vtkObjectBase *);
+    template <typename T> using setter = void (T::*)(vtkObjectBase *, LPCSTR);
 
-	virtual ~VtkAdapter() { }
+    virtual ~vtkAdapter() { }
 
-	inline LPCSTR GetAdaptingObject() {
-		return m_vtkObjectName;
-	}
+    inline LPCSTR GetAdaptingObject() 
+    {
+        return m_vtkObjectName;
+    }
 
-	virtual void SetAttribute(vtkSmartPointer<vtkActor> actor, LPCSTR propertyName, LPCSTR newValue) = 0;
-	virtual void GetAttribute(vtkSmartPointer<vtkActor> actor, LPCSTR propertyName, char* retValue) = 0;
-	virtual void GetDescriptor(char* retValue) const = 0;
+    virtual void SetAttribute(
+        vtkObjectBase *object,
+        LPCSTR propertyName,
+        LPCSTR newValue) = 0;
+
+    virtual LPCSTR GetAttribute(
+        vtkObjectBase *object,
+        LPCSTR propertyName) = 0;
+
+    virtual LPCSTR GetDescriptor() const = 0;
+
+    virtual vtkObjectBase *NewInstance() = 0;
+
+    virtual LPCSTR CallMethod_AsString(
+        vtkObjectBase *object,
+        LPCSTR method,
+        LPCSTR format,
+        const char *const *argv) const = 0;
+
+    virtual vtkObjectBase *CallMethod_AsVtkObject(
+        vtkObjectBase *object,
+        LPCSTR method,
+        LPCSTR format,
+        const char *const *argv) const = 0;
+
+    virtual void CallMethod_AsVoid(
+        vtkObjectBase *object,
+        LPCSTR method,
+        LPCSTR format,
+        const char *const *argv) = 0;
 
 protected:
-	LPCSTR m_vtkObjectName;
+    // The name of the VTK object (as written in the wiki) for which
+    // the class acts as an adapter
+    LPCSTR m_vtkObjectName;
 
-	VtkAdapter(LPCSTR vtkObjectName) { 
-		m_vtkObjectName = vtkObjectName;
-	};
+    vtkAdapter(
+        LPCSTR vtkObjectName) 
+    { 
+        m_vtkObjectName = vtkObjectName;
+    };
 };
     \end{cpp}
 \end{figure}
@@ -128,30 +149,32 @@ The generic calls for getting and setting attributes are respectively \verb|GetA
 
 The actual attribute to change is encoded in a \verb|LPCSTR| that contains the name of the attribute exactly as written in the C++ code. A difference from the \verb|GetAttribute| generic call and the particular \verb|getter| template is that the return value is not returned but a specific parameter acts as return buffer, as this value is not to be used inside the C++ native code but to be sent through to the C\# interface in Unity.
 
-Alongside the adapters, the \verb|VtkAdapterUtility| provides the access point for the register of the adapters. This allows to couple adapters to a single point of entry and masks the adapters to the infrastructure layer, making it easy to execute on a separate service. The implementation of this class is generated by a Python script at build time, available in Appendix~\ref{apx:generate-register}. The interface of the utility is shown in Listing~\ref{lst:vtkadapterutility}.
+Finally, the \verb|CallMethod| family of methods allows the user to implement generic methods that can be called from the Unity environment. In particular, these methods are meant to be used to accomodate the needs of use cases number 2 and 3. These use a similar signature to the \verb|VtkResource_CallMethod| methods from the plugin's API, so that the parameters can be directly passed down without the need of unnecessary parsing at the infrastructure level. The responsibility for correct parsing is left to the user to implement, so that they can also have a higher degree of freedom of what they can actually code.
 
-\begin{figure}
+Alongside the adapters, the \verb|vtkAdapterUtility| provides the access point for the register of the adapters. This allows to couple adapters to a single point of entry and masks the adapters to the infrastructure layer, making it easy to execute on a separate service. The implementation of this class is generated by a Python script at build time, available in Appendix~\ref{apx:generate-register}. The interface of the utility is shown in Listing~\ref{lst:vtkadapterutility}.
+
+\begin{figure}[ht!]
     \centering
-    \begin{cpp}[label=lst:vtkadapterutility,caption={VtkAdapterUtility interface}]
-class VtkAdapterUtility
+    \begin{cpp}[label=lst:vtkadapterutility,caption={vtkAdapterUtility interface}]
+class vtkAdapterUtility
 {
 public:
-	static VtkAdapter* GetAdapter(LPCSTR vtkAdaptedObject);
+	static vtkAdapter *GetAdapter(LPCSTR vtkAdaptedObject);
 
 private:
-	static const std::unordered_map<LPCSTR, VtkAdapter*> s_adapters;
+	static const std::unordered_map<LPCSTR, vtkAdapter *> s_adapters;
 };
     \end{cpp}
 \end{figure}
 
 As visible, the adapter only exposes the function \verb|GetAdapter| that returns the implementation of the adapter for the unique ID requested if such object exists, \verb|NULL| otherwise. The adapters are stored in an unordered map, as it has faster access times than the ordered counterparts \cite{stdunord16, stdmapcp55} on the average case. This depends on the hashing function, but as we use default types for keys and we do not replicate them, the average case is almost certainly guaranteed. The map is populated on instantiation and the entries are generated as Singletons, as shown in Listing~\ref{lst:adaptersmap}.
 
-\begin{figure}
+\begin{figure}[ht!]
     \centering
     \begin{cpp}[label=lst:adaptersmap,caption={Example of adapters register instantiation.}]
-const std::unordered_map<LPCSTR, VtkAdapter*> VtkAdapterUtility::s_adapters =
+const std::unordered_map<LPCSTR, vtkAdapter*> vtkAdapterUtility::s_adapters =
 {
-	{ Singleton<VtkConeSourceAdapter>::Instance()->GetAdaptingObject(), Singleton<VtkConeSourceAdapter>::Instance() },
+	{ Singleton<vtkConeSourceAdapter>::Instance()->GetAdaptingObject(), Singleton<vtkConeSourceAdapter>::Instance() },
 	// More adapters...
 };
     \end{cpp}
@@ -180,7 +203,7 @@ When calling any method that uses parameters of generic types, we use a similar 
 
 A complete description of the formatting values see Table~\ref{tab:format-values}, while the interface of the introspection layer is documented in Appendix~\ref{apx:api}
 
-\begin{table}[ht!]
+\begin{table}[t]
     \centering
     \begin{tabulary}{.9\textwidth}{LL}
     \multicolumn{1}{c}{\textbf{Symbol}} & \multicolumn{1}{c}{\textbf{Meaning}} \\ \hline
@@ -194,6 +217,10 @@ A complete description of the formatting values see Table~\ref{tab:format-values
     \caption{Format symbols used in the calls to the plugin.}
     \label{tab:format-values}
 \end{table}
+
+The main limitation of our Introspector's prototype stems from the Python scripts we used. We modified them to add support for the new features we require, namely the possibility to instantiate a node through its C++ instance, the generation of the descriptor and the generic calls to not setter, getter and on/off methods. Furthermore, all the signatures have been made compliant with our parameter conventions.
+
+% TODO: Add the set-to and on/off methods to the possible direct calls or using parsing or similar.
 
 %\begin{itemize}[leftmargin=1.5truecm]
 %    \setlength{\itemindent}{-1truecm}
@@ -218,7 +245,9 @@ The basic API of the managed plugin is identical to the native plugin API, with 
 
 As a further design discussion, we present now the Toolbox and Composer components that are part of the managed plugin. As the UI is out of the scope of this thesis, we will not discuss particular implementations of these components, as they will be presented in a separate thesis. Designing these components, we mirror our approach to accessing VTK, as our drivers remain the same. In particular, the Toolbox is the component that mirrors the Adapters registry, while the Composer mirrors the Introspector.
 
-\subsection{Toolbox}
+For the API of the managed plugin, see Appendix~\ref{apx:api}. The minimal API is identical to the native plugin API, with the types being those of C\#, while the support and quality of life methods introduced in C\# to avoid verbose code is separately documented.
+
+\subsection{UI Toolbox}
 \label{sec:design-toolbox}
 
 As UIs are in general more complex than accessing introspectively a library, as they are made of more components and constrained by interaction and usage limits that depend on the device being used, the environment, the input devices and so on, the ability to introduce custom-tailored UI components is necessary. Thus, we propose the usage of a registry of UI prefabs developed in Unity as first-tier access to the UI of the environment.
@@ -227,13 +256,21 @@ A registry mapping from the classname to the prefab factory \verb|IComponentFact
 
 % TODO: write more
 
-\subsection{Composer}
+\subsection{UI Composer}
 \label{sec:design-uicomposer}
 
 If the Toolbox fails, a generic system to generate UIs gets called. This requires more resources and time to execute, as it takes the descriptor of the VTK object, which maps the names of the attributes to their types, and then creates a minimal UI with this information. The Composer uses a registry of minimal components that are part of the environment that implement interfaces to edit native simple values, e.g. integers, decimals, booleans, strings and so on. These components are also registered with the Toolbox, for faster access.
 
 The generated components this way are then used to instantiate a \verb|ComposedUI| object, that contains the information of the different parts that make the UI and then add this to the Composer's registry, acting as a \verb|IComponentFactory| for later calls of the \verb|FactoryManager| on the same classname to avoid generating the same factory twice.
 
-In order to accelerate and expand the Composer's ability, the mappings are not hardcoded; the Composer still uses the Toolbox as a lookup for the basic parts used to generate the UI, and thus custom-tailored basic UIs can be added to the Toolbox to override the natively implemented ones.
+In order to accelerate and expand the Composer's ability, the mappings are not hardcoded; the Composer still uses the Toolbox as a lookup for the basic parts used to generate the UI, and thus custom-tailored basic UIs can be added to the Toolbox to override the natively implemented ones. In this way, the component for a given string in the \verb|FactoryManager|'s registry is always the last one registered, making the native ones the lowest priority ones.
+
+The \verb|FactoryManager| is designed in order to accomodate our maintainability driver, and as such this modular registry comes in handy to set some conventions in the development of UIs using this system that make them re-usable. In particular, UI components should be registered either if they allow the manipulation and/or visualization of a single parameter or when they combine other UI components. The first ones constitute the minimal set of the UI components, which respond to a particular input/output, like \verb|float|, \verb|int|, or \verb|string|, while the others respond to complex interactions like showing the UI for a \verb|vtkConeSource| object, or visualizing a \verb|stringList|. For the naming of the components we encourage camel case with the first letter lowercase as by VTK's convention. 
+
+This conventions also make for the best operability of the Composer that will be able to generate more complex UIs, using composed UIs instead of simple input methods. To allow for further customization, we propose that the names can be postponed with filters that specify how the input is inserted, i.e. a float can be inputted through \verb|slider| or \verb|textField| for example. However, this is to make the modularity more useful to the user, rather than to the composer, as we do not design how these filters could be used by it.
 
 % TODO: write more
+
+\section{Final Architecture}
+
+% TODO: add the implementation's architecture
