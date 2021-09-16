@@ -107,6 +107,13 @@ Our solution aims at creating a bridge that would allow the user to create pipel
 
 The downside of this solution is its performance: as the wrapper requires CPU to GPU copies, with complex visualizations the performances drop significantly. This has already been discussed by Wheeler et al. \cite{wheeler_virtual_2018} and is one of the reasons that lead them to develop their own solution. On the other side, this is an official wrapper maintained by Kitware, the same creators of \acrshort{vtk}, and it has already an integration for Unity.
 
-\paragraph{ParaView} \footnote{\url{https://www.paraview.org/}} is an \acrshort{ide} for the creation of visualizations mainly based on \acrshort{vtk}, also developed by Kitware. This uses the same paradigm as \acrshort{vtk} for the creation of visualizations, that is by the means of pipelines. The software supports a \acrshort{vr} porting for the visualizations which feels clunky, as it is a rendering of 2D UIs in a 3D immersive and interactive environment, which hinders user experience.
+\paragraph{ParaView} \footnote{\url{https://www.paraview.org/}} is an \acrshort{ide} for the creation of visualizations mainly based on \acrshort{vtk}, also developed by Kitware. This uses the same paradigm as \acrshort{vtk} for the creation of visualizations, that is by the means of pipelines. An example of a ParaView visualization can be seen in Figure~\ref{fig:paraview} The software supports a \acrshort{vr} porting for the visualizations which feels clunky, as it is a rendering of 2D UIs in a 3D immersive and interactive environment, which hinders user experience.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{pictures/paraview.png}
+    \caption{ParaView visualization of a StreamTracer using a structured grid point dataset.}
+    \label{fig:paraview}
+\end{figure}
 
 Of the previous solutions, only Dreuning's work addresses the issue of allowing the creation of an integrated development environment in \acrshort{vr}. This is not an issue in and of itself, but it makes for a cumbersome and time consuming development environment for \acrshort{vr} applications. The solutions all miss one of the key characteristics we envision for our environment, be it the performances necessary for \acrshort{vr} applications, the generality of an \acrshort{ide} or the support for multiple \acrshort{hmd}s.
