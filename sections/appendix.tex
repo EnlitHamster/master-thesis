@@ -3,7 +3,7 @@
 \chapter{Example VTK pipeline}
 \label{apx:quadric-vtk}
 	
-\begin{cpp}[label=lst:quadricvtk,caption={Example of Quadric Contour in VTK.},aboveskip=20pt]
+\begin{cpp}[label=lst:quadricvtk,caption={Example of Quadric Contour in VTK used to produce Figure~\ref{fig:quadric-render-pipeline}.},aboveskip=20pt]
 #include <vtkQuadric.h>
 #include <vtkSampleFunction.h>
 #include <vtkContourFilter.h>
@@ -66,20 +66,20 @@ int main(int arc, char* argv)
 }
 \end{cpp}
 	
-\chapter{VtkAdapterUtility code generator}
+\chapter{vtkAdapterUtility code generator}
 \label{apx:generate-register}
 	
-In order to generate at before build a register of all the adapters added to the plugin, a Python script has been created to automate this process. This will generate the necessary support class used within the plugin, i.e. \verb|VtkAdapterUtility|. This class is comprised of a fixed header file and an source file that changes depending on the installed adapters. The Listing~\ref{lst:generateheader} shows the code of such script. An example of generated source file is shown in Listing~\ref{lst:vtkadapterutilityex}
+In order to generate at before build a register of all the adapters added to the plugin, a Python script has been created to automate this process. This will generate the necessary support class used within the plugin, i.e. \verb|vtkAdapterUtility|. This class is comprised of a fixed header file and an source file that changes depending on the installed adapters. The Listing~\ref{lst:generateheader} shows the code of such script. An example of generated source file is shown in Listing~\ref{lst:vtkAdapterutilityex}
 
 \begin{python}[label=lst:generateheader,caption={generate-header.py script},aboveskip=20pt]
 import os
 
 adapter_utility_h_name = "vtkAdapterUtility.h"
 adapter_utility_cpp_name = "vtkAdapterUtility.cpp"
-adapter_utility_class_name = "VtkAdapterUtility"
+adapter_utility_class_name = "vtkAdapterUtility"
 adapter_utility_getter_name = "GetAdapter"
 adapter_utility_register_name = "s_adapters"
-adapter_utility_register_type = "const std::unordered_map<LPCSTR, VtkAdapter*>"
+adapter_utility_register_type = "const std::unordered_map<LPCSTR, vtkAdapter*>"
 
 adapter_utility_h = open(adapter_utility_h_name, "w")
 adapter_utility_cpp = open(adapter_utility_cpp_name, "w")
@@ -122,7 +122,7 @@ adapter_utility_h.write("public:\n")
 
 # begin public area
 
-adapter_utility_h.write(f"\tstatic VtkAdapter* {adapter_utility_getter_name}(\n")
+adapter_utility_h.write(f"\tstatic vtkAdapter* {adapter_utility_getter_name}(\n")
 adapter_utility_h.write("\t\tLPCSTR vtkAdaptedObject);\n")
 adapter_utility_h.write("\n")
 
@@ -171,7 +171,7 @@ adapter_utility_cpp.write("\n")
 # Creating the adapters' mapping
 
 adapter_utility_cpp.write(f"{adapter_utility_register_type} {adapter_utility_class_name}::{adapter_utility_register_name} =");
-adapter_utility_cpp.write("{\n")
+adapter_utility_cpp.write("\n{\n")
 
 # begin s_adapters init
 
@@ -185,7 +185,7 @@ adapter_utility_cpp.write("};\n")
 adapter_utility_cpp.write("\n")
 adapter_utility_cpp.write("\n")
 
-adapter_utility_cpp.write(f"VtkAdapter* {adapter_utility_class_name}::{adapter_utility_getter_name}(\n")
+adapter_utility_cpp.write(f"vtkAdapter* {adapter_utility_class_name}::{adapter_utility_getter_name}(\n")
 adapter_utility_cpp.write("\tLPCSTR vtkAdaptedObject)\n")
 adapter_utility_cpp.write("{\n")
 
@@ -206,7 +206,7 @@ adapter_utility_cpp.write("\t}\n")
 adapter_utility_cpp.write("}\n")
 \end{python}
     
-\begin{cpp}[label=lst:vtkadapterutilityex,caption={Example VtkAdapterUtility.cpp},aboveskip=20pt]
+\begin{cpp}[label=lst:vtkAdapterutilityex,caption={Example vtkAdapterUtility.cpp},aboveskip=20pt]
 /* This file has been automatically generated through the Python header generation utility
  * 
  * This file contains the necessary information to allow the VtkToUnity plugin to know
@@ -221,12 +221,12 @@ adapter_utility_cpp.write("}\n")
 #include "vtkConeSourceAdapter.h"
 
 
-const std::unordered_map<LPCSTR, VtkAdapter*> VtkAdapterUtility::s_adapters ={
-	{ Singleton<VtkConeSourceAdapter>::Instance()->GetAdaptingObject(), Singleton<VtkConeSourceAdapter>::Instance() },
+const std::unordered_map<LPCSTR, vtkAdapter*> vtkAdapterUtility::s_adapters ={
+	{ Singleton<vtkConeSourceAdapter>::Instance()->GetAdaptingObject(), Singleton<vtkConeSourceAdapter>::Instance() },
 };
 
 
-VtkAdapter* VtkAdapterUtility::GetAdapter(
+vtkAdapter* vtkAdapterUtility::GetAdapter(
 	LPCSTR vtkAdaptedObject)
 {
 	auto itAdapter = s_adapters.find(vtkAdaptedObject);
@@ -549,7 +549,7 @@ In the following pages, we present the API of different parts of the library, in
 	Retrieves the value of the specificed attribute and returns it as a string.
 	\\
 	\begin{codify}
-	void VtkResrouce_SetAttrFromString(
+	void VtkResource_SetAttrFromString(
 		const int rid,
 		LPCSTR propertyName,
 		LPCSTR format,

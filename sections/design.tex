@@ -29,7 +29,7 @@ The final architecture is composed of a total of six components, as shown in Fig
     \item A \textbf{Unity UI Library}, comprised of a \textbf{UI Toolbox}, which is made of custom UIs created to tailor specific usages, and a \textbf{UI Composer}, which uses a minimal set of UI components to generate UIs on-the-fly.
 \end{itemize}
 
-\begin{figure}[t]
+\begin{figure}[!t]
     \centering
     \includegraphics[width=\textwidth]{pictures/Architecture-v0.3.png}
     \caption{The architecture design of the plugin, showing inner working details of the various components.}
@@ -41,7 +41,7 @@ The final architecture is composed of a total of six components, as shown in Fig
 
 The first component we tackle is the most simple yet the most crucial of this plugin. The infrastructure layer acts as a dispatcher for the requests coming from the managed plugin, routing them either to the rendering API or further down towards the VTK access components. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-infra}
 
-\begin{figure}
+\begin{figure}[!t]
     \centering
     \includegraphics[width=\textwidth]{pictures/Architecture-v0.3-infra.png}
     \caption{Architecture with the infrastructure layer highlighted.}
@@ -79,9 +79,9 @@ In order to limit the amount of routes in the infrastructure level and overheads
 \subsection{Introspection}
 \label{sec:design-introspection}
 
-The introspection layer is the low priority of the two VTK access tiers. It acts as the main route to connect to VTK and access its features and the most used component of the native part of our plugin for the average use-case of this system. It is comprised of two main parts, the Python \verb|Introspector| script, which uses the Dreuning implementation to access VTK introspectively, and the C++ wrapper that handles the memory used by the VTK objects and the Python Interpreter embedded in the system. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-intro}
+The introspection layer is the low priority of the two VTK access tiers. It acts as the main route to connect to VTK and access its features and the most used component of the native part of our plugin for the average use-case of this system. It is comprised of two main parts, the Python \verb|Introspector| script, which uses the Dreuning implementation to access VTK introspectively, and the C++ wrapper that handles the memory used by the VTK objects and the Python Interpreter embedded in the system. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-intro}.
 
-\begin{figure}
+\begin{figure}[!t]
     \centering
     \includegraphics[width=\textwidth]{pictures/Architecture-v0.3-intro.png}
     \caption{Architecture with the introspection layer highlighted.}
@@ -100,11 +100,11 @@ The implementation instantiates a \verb|Introspector| class from Python, using i
 
 To avoid ambiguity when calling these methods, and to avoid passing excessive data through the Unity native interface, the methods that retrieve values from the \verb|Introspector| use a postfix notation to determine whether the call is to return a native value that can easily be parsed to and from a string representation (\verb|_AsString|), an id of a VTK object (\verb|_AsVtkObject|), or either if the result is to be discarded or the method being called has \verb|void| return type (\verb|_AsVoid|).
 
-When calling any method that uses parameters of generic types, we use a similar convention as the Python/C API so to make the maitainability of the code easier, as these are strictly intertwined and usually used alongside. As such, calls are structured as follows: the first parameter is the pointer to the object on which the method is to be called, the second parameter is the name of the method to be called, or a specifier that acts as a dispatching value (i.e. dispatching either to \verb|SetInputConnection| or \verb|SetSourceConnection|), third is the string format of the following parameters (e.g. a method that has three doubles as parameters would have as format \verb|"fff"|), and finally a vector containing the parameters. Special treatment is reserved for the \verb|"O"| object parameters that are first past as string representation of integer values, then parser to integers by the infrastructure layer, which represents the id of the VTK object in the registry, and finally two vectors are sent to the introspection layer, one with the \verb|vtkObjectBase *| objects and the other with the rest of the parameters.
+When calling any method that uses parameters of generic types, we use a similar convention as the Python/C API so to make the maintainability of the code easier, as these are strictly intertwined and usually used alongside. As such, calls are structured as follows: the first parameter is the pointer to the object on which the method is to be called, the second parameter is the name of the method to be called, or a specifier that acts as a dispatching value (i.e. dispatching either to \verb|SetInputConnection| or \verb|SetSourceConnection|), third is the string format of the following parameters (e.g. a method that has three doubles as parameters would have as format \verb|"fff"|), and finally a vector containing the parameters. Special treatment is reserved for the \verb|"O"| object parameters that are first past as string representation of integer values, then parser to integers by the infrastructure layer, which represents the id of the VTK object in the registry, and finally two vectors are sent to the introspection layer, one with the \verb|vtkObjectBase *| objects and the other with the rest of the parameters.
 
 A complete description of the formatting values see Table~\ref{tab:format-values}, while the interface of the introspection layer is documented in Appendix~\ref{apx:api}
 
-\begin{table}[t]
+\begin{table}[!t]
     \centering
     \begin{tabulary}{.9\textwidth}{LL}
     \multicolumn{1}{c}{\textbf{Symbol}} & \multicolumn{1}{c}{\textbf{Meaning}} \\ \hline
@@ -136,9 +136,9 @@ The main limitation of this implementation is that it is not strictly VTK comple
 \subsection{Adapters}
 \label{sec:design-adapters}
 
-Next to the introspection layer, the adapter layer is comprised of a collection of adapters added by the user. These are a way of allowing users to expand the plugin, taking advantage of the pure C++ performance edge over the C++ and Python introspection layer. Furthermore, it allows the users to introcude "templates" in the plugin, i.e. creating adapters that reduce repetitive and verbose calls to a single call to the C++ plugin. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-adapt}
+Next to the introspection layer, the adapter layer is comprised of a collection of adapters added by the user. These are a way of allowing users to expand the plugin, taking advantage of the pure C++ performance edge over the C++ and Python introspection layer. Furthermore, it allows the users to introcude "templates" in the plugin, i.e. creating adapters that reduce repetitive and verbose calls to a single call to the C++ plugin. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-adapt}.
 
-\begin{figure}
+\begin{figure}[!t]
     \centering
     \includegraphics[width=\textwidth]{pictures/Architecture-v0.3-adapt.png}
     \caption{Architecture with the adapter layer highlighted.}
@@ -159,11 +159,11 @@ The adapters are Singleton instances that define first and foremost a unique str
 
 Optionally, the adapter can implement rendering information in case the adapter is not for a specific \acrshort{vtk} class but for a template or custom algorithm, in which case information is needed on how to render and update the objects generated by the adapter.
 
-In order to implement the defined adapters, we first define a basic adapter class which is used for only use case number 1, i.e. the adapting of \acrshort{vtk} defined objects. This class does not define rendering and update information, as these are already defined by \acrshort{vtk}. We implement \verb|vtkAdapter| as shown in listing~\ref{lst:vtkadapter}
+In order to implement the defined adapters, we first define a basic adapter class which is used for only use case number 1, i.e. the adapting of \acrshort{vtk} defined objects. This class does not define rendering and update information, as these are already defined by \acrshort{vtk}. We implement \verb|vtkAdapter| as shown in listing~\ref{lst:vtkAdapter}
 
 \begin{figure}[ht!]
     \centering
-    \begin{cpp}[label=lst:vtkadapter,caption={vtkAdapter class}]
+    \begin{cpp}[label=lst:vtkAdapter,caption={C++ implementation of the vtkAdapter class.}]
 class vtkAdapter
 {
 public:
@@ -232,11 +232,11 @@ The actual attribute to change is encoded in a \verb|LPCSTR| that contains the n
 
 Finally, the \verb|CallMethod| family of methods allows the user to implement generic methods that can be called from the Unity environment. In particular, these methods are meant to be used to accomodate the needs of use cases number 2 and 3. These use a similar signature to the \verb|VtkResource_CallMethod| methods from the plugin's API, so that the parameters can be directly passed down without the need of unnecessary parsing at the infrastructure level. The responsibility for correct parsing is left to the user to implement, so that they can also have a higher degree of freedom of what they can actually code.
 
-Alongside the adapters, the \verb|vtkAdapterUtility| provides the access point for the register of the adapters. This allows to couple adapters to a single point of entry and masks the adapters to the infrastructure layer, making it easy to execute on a separate service. The implementation of this class is generated by a Python script at build time, available in Appendix~\ref{apx:generate-register}. The interface of the utility is shown in Listing~\ref{lst:vtkadapterutility}.
+Alongside the adapters, the \verb|vtkAdapterUtility| provides the access point to the register of the adapters, which is the collection of the adapters wrapped in a Singleton pattern available to the system. This allows to couple adapters to a single point of entry and masks the adapters to the infrastructure layer, making it easy to execute on a separate service. The implementation of this class is generated by a Python script at build time, available in Appendix~\ref{apx:generate-register}. The interface of the utility is shown in Listing~\ref{lst:vtkAdapterutility}.
 
 \begin{figure}[ht!]
     \centering
-    \begin{cpp}[label=lst:vtkadapterutility,caption={vtkAdapterUtility interface}]
+    \begin{cpp}[label=lst:vtkAdapterutility,caption={C++ interface of the vtkAdapterUtility class.}]
 class vtkAdapterUtility
 {
 public:
@@ -248,11 +248,11 @@ private:
     \end{cpp}
 \end{figure}
 
-As visible, the adapter only exposes the function \verb|GetAdapter| that returns the implementation of the adapter for the unique ID requested if such object exists, \verb|NULL| otherwise. The adapters are stored in an unordered map, as it has faster access times than the ordered counterparts \cite{stdunord16, stdmapcp55} on the average case. This depends on the hashing function, but as we use default types for keys and we do not replicate them, the average case is almost certainly guaranteed. The map is populated on instantiation and the entries are generated as Singletons, as shown in Listing~\ref{lst:adaptersmap}.
+As visible, the adapter only exposes the function \verb|GetAdapter| that returns the implementation of the adapter for the unique ID requested if such object exists, \verb|NULL| otherwise. The adapters are stored in an unordered map, as it has faster access times than the ordered counterparts on the average case \cite{stdunord16, stdmapcp55}. This depends on the hashing function, but as we use default types for keys and we do not replicate them, the average case is almost certainly guaranteed. The map is populated on instantiation and the entries are generated as Singletons, as shown in Listing~\ref{lst:adaptersmap}.
 
 \begin{figure}[ht!]
     \centering
-    \begin{cpp}[label=lst:adaptersmap,caption={Example of adapters register instantiation.}]
+    \begin{cpp}[label=lst:adaptersmap,caption={Example of adapters' register instantiation.}]
 const std::unordered_map<LPCSTR, vtkAdapter*> vtkAdapterUtility::s_adapters =
 {
 	{ Singleton<vtkConeSourceAdapter>::Instance()->GetAdaptingObject(), Singleton<vtkConeSourceAdapter>::Instance() },
@@ -271,14 +271,14 @@ The level of generality of this component however is also one of its main limita
 
 Another limitation, at least compared to the introspection layer, is that this tier has no guarantee to compile with different versions of VTK, as the features used are not guaranteed to be present or be the same across versions. Although VTK developers have as one of their requirements the new versions of the library to be backwards compatible as already discussed in Chapter~\ref{ch:rqrmsandclngs}, this does not mean that they are forwards compatible, and adapters developed with newer versions of VTK are not guaranteed to work with older ones, and we do not set a way to solve this issue. This is because adapters are tools for the users and they should be responsible for paying attention to these kind of details.
 
-The other great advantage of adapters over introspection is that it can make use of the performances of pure C++ code. As we discussed in Chapter~\ref{ch:rqrmsandclngs}, pure C++ code runnig VTK algorithms achieves far greater performances on the execution of pipelines than our approach using Python. As such, adapters enable the users to take advantage of such performances, removing the barrier of also having to code their Unity plugin along.
+The other great advantage of adapters over introspection is that it can make use of the performances of pure C++ code. As we discussed in Chapter~\ref{ch:rqrmsandclngs}, pure C++ code running VTK algorithms achieves far greater performances on the execution of pipelines than our approach using Python. As such, adapters enable the users to take advantage of such performances, removing the barrier of also having to code their Unity plugin along.
 
 \section{Managed Plugin}
 \label{sec:design-managed-plugin}
 
-The integration of VTK with Unity makes use of both a native plugin, which we already discussed, and a managed plugin, which is the focus of this section. In particular, this part of the system is responsibile for making the native plugin API more user-friendly, and connecting the rendering cycles of the two rendering contexts. The setup is almost identical to the VtkToUnity plugin, with a different API for VTK.
+The integration of VTK with Unity makes use of both a native plugin, which we already discussed, and a managed plugin, which is the focus of this section. In particular, this part of the system is responsible for making the native plugin API more user-friendly, and connecting the rendering cycles of the two rendering contexts. The setup is almost identical to the VtkToUnity plugin, with a different API for VTK.
 
-The basic API of the managed plugin is identical to the native plugin API, with the exception of the usage of the \verb|Marshal|, a .NET library used to work with unmanaged memory areas. In Unity, this library is used in particular to handle passing paramters back and forth between the managed and native parts of the environment, like defining how strings have to be handled passing down to C++. In our implementation we use this exclusively to specify strings to be handled as long pointer strings, as we represent them as \verb|LPCSTR| (Long-Pointer Constant STRing) in our C++ code.
+The basic API of the managed plugin is identical to the native plugin API, with the exception of the usage of the \verb|Marshal|, a .NET library used to work with unmanaged memory areas. In Unity, this library is used in particular to handle passing parameters back and forth between the managed and native parts of the environment, like defining how strings have to be handled passing down to C++. In our implementation we use this exclusively to specify strings to be handled as long pointer strings, as we represent them as \verb|LPCSTR| (Long-Pointer Constant STRing) in our C++ code.
 
 As a further design discussion, we present now the Toolbox and Composer components that are part of the managed plugin. As the UI is out of the scope of this thesis, we will not discuss particular implementations of these components, as they will be presented in a separate thesis. Designing these components, we mirror our approach to accessing VTK, as our drivers remain the same. In particular, the Toolbox is the component that mirrors the Adapters registry, while the Composer mirrors the Introspector.
 
@@ -287,13 +287,13 @@ For the API of the managed plugin, see Appendix~\ref{apx:api}. The minimal API i
 \subsection{UI Toolbox}
 \label{sec:design-toolbox}
 
-The UI Toolbox is the main access to UI components of the managed plugin. It acts as a database of factories that generate specific UIs when called upon. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-toolbox}
+The UI Toolbox is the main access to UI components of the managed plugin. It acts as a database of factories that generate specific UIs when called upon. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-toolbox-comp} highlighted in blue.
 
-\begin{figure}
+\begin{figure}[!t]
     \centering
-    \includegraphics[width=\textwidth]{pictures/Architecture-v0.3-toolbox.png}
-    \caption{Architecture with the UI Toolbox highlighted.}
-    \label{fig:arch-toolbox}
+    \includegraphics[width=\textwidth]{pictures/Architecture-v0.3-toolbox-comp.png}
+    \caption{Architecture with the UI Toolbox highlighted in blue and the UI Composed in red.}
+    \label{fig:arch-toolbox-comp}
 \end{figure}
 
 As UIs are in general more complex than accessing introspectively a library, as they are made of more components and constrained by interaction and usage limits that depend on the device being used, the environment, the input devices and so on, the ability to introduce custom-tailored UI components is necessary. Thus, we propose the usage of a registry of UI prefabs developed in Unity as first-tier access to the UI of the environment.
@@ -303,14 +303,7 @@ A registry mapping from the classname to the prefab factory \verb|IComponentFact
 \subsection{UI Composer}
 \label{sec:design-uicomposer}
 
-Finally, the UI Composer is the last part of the plugin we will discuss. This is a factory of factories, generating UI components that are a collection of minimal input UIs that are the base of the UI Toolbox. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-comp}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=\textwidth]{pictures/Architecture-v0.3-comp.png}
-    \caption{Architecture with the UI Composer highlighted.}
-    \label{fig:arch-comp}
-\end{figure}
+Finally, the UI Composer is the last part of the plugin we will discuss. This is a factory of factories, generating UI components that are a collection of minimal input UIs that are the base of the UI Toolbox. As a reference, the component is highlighted in the architecture in Figure~\ref{fig:arch-toolbox-comp}.
 
 If the Toolbox fails, a generic system to generate UIs gets called. This requires more resources and time to execute, as it takes the descriptor of the VTK object, which maps the names of the attributes to their types, and then creates a minimal UI with this information. The Composer uses a registry of minimal components that are part of the environment that implement interfaces to edit native simple values, e.g. integers, decimals, booleans, strings and so on. These components are also registered with the Toolbox, for faster access.
 
