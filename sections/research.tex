@@ -51,6 +51,7 @@ Our final requirement for our solution is that it is performant. This is particu
 However, hardcoding \acrshort{vtk}s features would make for the best performances, but would make the system plugin a huge collection of functions, as it would be necessary to wrap the calls for every class and method accessible to the user, which is hardly what we aim at. As such, we must accept a compromise between the two, however the objective of a stable 90 FPS is critical for this project.
 
 \section{Challenges}
+\label{sec:rqrmsandclngs-challenges}
 
 Given the requirements of the system we aim to create, there a number of challenges we must face before implementing the software. These are mostly related to its design and technology choices, and as such we will discuss them separately from the actual implementation. These challenges mainly relate to the issue of connecting VTK and Unity and to the ability to guarantee full access to VTK from Unity while upholding version-agnosticism.
 
@@ -111,6 +112,7 @@ For even further support, \acrshort{vtk} ships with a module for facilitate Pyth
 As a proof of concept, to showcase the capabilities of our system, we do not use Boost::Python, so to limit external coupling and overheads and because VTK alreadyh offers an integration of the API that makes the usage of the Python/C API easier. We recognise though that the advantages of the library are not trivial and it should be explored as a potential option for future updates to the project.
 
 \section{Validation}
+\label{sec:rqrmsandclngs-validation}
 
 Before discussing design and implementation of our plugin, we validate our choices to tackle the challenges we face in this project. Because we base our plugin on VtkToUnity, the integration with Unity through the usage of a native plugin is already validated by their results, achieving the recommended performance of 90 FPS. On the other hand, the validation of the Python embedding choice is not available, and as such we develop a small test confirming our choice.
 
