@@ -1,16 +1,30 @@
 \chapter{Discussion}
 \label{ch:discussion}
-In this chapter, we discuss the results of our experiment(s) on ...
 
-\begin{finding}
-	Highlight like this an important finding of your analysis of the results.
-	\label{find:important1}
-\end{finding}
+In Chapter~\ref{ch:results}, we introduced our validation of our design and our expectations. In this Chapter we discuss whether our solution meets our expectations, what unforeseen results we obtained and what are the limitations of and threats to our design and implementation. In this discussion, we will mostly focus on performances and generality of the engine. Usability is discussed in Chapter~\ref{ch:conclusion} as it heavily relates to the future development of the UI environment we described in Chapter~\ref{ch:design}.
 
-Refer to Finding~\ref{find:important1}.
+\section{Expectations met}
+
+\section{Shortcomings}
+
+%In this chapter, we discuss the results of our experiment(s) on ...
+
+%\begin{finding}
+%	Highlight like this an important finding of your analysis of the results.
+%	\label{find:important1}
+%\end{finding}
+
+%Refer to Finding~\ref{find:important1}.
 
 \section{Threats to validity}
-What could affect the validity of your research? Think of pitfalls of your research method, experimental setup, interpreting the results.
+%What could affect the validity of your research? Think of pitfalls of your research method, experimental setup, interpreting the results.
 
+The main threats to the validity of this research are the limitations of the introspection layer, already introduced in Chapter~\ref{ch:design}. In particular, of itself the introspection layer does not strictly meet our definition of VTK-completeness. As one of our objectives was to have a general system that could access the full array of tools provided by \acrshort{vtk}, this threatens the results we achieved.
 
+However, if we consider the entire system instead of focusing only on the single components, we argue the system provides all the necessary tools to make the system strictly VTK-complete, and that the introspection layer provides an out-of-the-box solution that caters alone to most needs of visualization developers. More particular needs may require the usage of adapters, but as those are small code snippets, they can be easily shared and re-used, and thus a repository of adapters can be created.
 
+Furthermore, the Python Introspector loads most information and instantiation, thus giving a fast and general access to most resources, whereas a more general solution may require longer times to actually generate this information, and may not be as performant as a smaller, narrower solution. We expand on the possible paths forward on the Introspector in Chapter~\ref{ch:conclusion}.
+
+When it comes to our validation, our experiments do not cover all the array of uses of our software. Furthermore, we tested performances without factoring in the interactiveness of the environment we envision. However, we presented an engine which is able to reach the desired performances and enables further research into the creation of a VR visualization development environment. If performances should not reach the necessary thresholds for bigger projects, there is ample room for improvement.
+
+Also, our solution is parallel and distribution ready, allowing to use these technologies for performance boosts which are non-trivial. We believe that, as a preliminary research in the creation of such a complex environment, we already demonstrated that visualization and \acrshort{vr} technologies are mature enough to start the creation of these environments, and with our implementation we filled an important gap. On top of this, our solution is not exclusively aimed to such an environment as the one we envision, and can be used for multiple development projects, and we believe it will help standardize the VR visualization development landscape by catering to the multiple needs the community has.

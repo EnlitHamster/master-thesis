@@ -1,5 +1,51 @@
 \chapter{Results}
-
 \label{ch:results}
-In this chapter, we present the results of our experiment(s). 
+
+In the previous chapters we presented an architecture that satisfies the requirements of a VR visualization development workstation. We also presented an implementation of the engine of such an environment that satisfies in particular its performance and generality requirements, as those are the most critical. To validate our work, we run similar tests to those presented by Dreuning for their OculusVTK environment \cite{dreuning_visual_2016}. We compare the results of these tests with with those from Dreuning and the performances of VtkToUnity \cite{wheeler_virtual_2018}. Finally, we compare those results with the findings from Chapter~\ref{ch:rqrmsandclngs} on the performances of VTK in C++ and Python.
+
+\section{Methodology}
+
+We have developed two Unity scenes using our plugin to test two visualizations using VTK. In Section~\ref{sec:materials} we introduce these scenes. The implementation follows a similar structure to the examples provided by VtkToUnity, but offer less interaction. To each of the VTK objects in the scene, a rotation is applied in order to evaluate the behaviour 
+
+As we are using an HTC Vive headset, we can use the SteamVR provided layer to collect the performance data. Unfortunately, this utility requires us to take these values manually or to record through other software the readings, as there is no way to dump the amount of values we need from this utility. For this reason, we developed a small script in C\# for sampling the FPS values and store them in a buffer that is dumped when the execution of the scene is terminated. We dump at the end of the execution to avoid the IO operations to influence the FPS values. The FPS count is also displayed in the Head-Up Display (HUD) within the environment.
+
+The scenes are executed multiple times and for different durations also to evaluate the memory usage and performances over time. This is because we need our environment to be using as little memory as possible and keep performances stable over time; if these values are not constant over time, the environment would quickly become unusable. Our objective is to have an average FPS count that is greater than or equal to 90 FPS. In case there are FPS drops, we evaluate those case-by-case, as they may have varying inluence on the user experience. The actual time and amount of times each scene is run is shown in Table~\ref{tab:test-specs}.
+
+\begin{table}[]
+    \centering
+    \caption{Execution time and number of runs for each time. These are the automatic tests only, manual tests are not included in this table.}
+    \label{tab:test-specs}
+    \resizebox{.7\textwidth}{!}{%
+        \begin{tabular}{ccc}
+        \textbf{Scene} & \multicolumn{1}{c}{\textbf{Execution time (s)}} & \multicolumn{1}{c}{\textbf{Total runs}} \\ \hline
+        \multirow{3}{*}{vtkConeSource}   & 4   & 5 \\
+                                         & 8   & 5                      \\
+                                         & 60  & 1                      \\ \hline
+        \multirow{3}{*}{vtkStreamTracer} & 4   & 5 \\
+                                         & 8   & 5                       \\
+                                         & 60  & 1                       \\
+        \hline
+        \end{tabular}%
+    }
+\end{table}
+
+As a final comparison, these tests are run both with and without adapters at the plugin level. We compare the performances and memory usage of the two, were we consider the adapter layer as the control group for the introspection layer measurements. This is due to the adapter layer using the established mechanisms of integrating VTK and Unity \cite{wheeler_virtual_2018,kitware_activiz}, and thus it makes sense for those performances to be our control measurements.
+
+We expect our tests to show that the scenes using the introspection layer are indeed slower, heavier or both compared to the runs using the adapters. However, we also expect both to yield usable environments and as such achieve our objective of developing a powerful enough engine to support general purpose VR visualization development environments. We also expect there to be a significant difference in the execution times compared to the native runs from Chapter~~\ref{ch:rqrmsandclngs}, as we introduce delay both in accessing \acrshort{vtk} and with Unity's rendering cycle. However, seeing as the execution times from the native tests were promising, we expect this not to be an issue.
+
+\section{Materials}
+\label{sec:materials}
+
+To test our design, we implemented the engine of the environment, i.e. the Infrastructure layer and its integration with Unity, and developed two test scenes in Unity using the plugin and its calls through the Introspection layer. In order to test them, we used an enviroment comprised of Python 3.7 to run the scripts and embed the interpreter in the C++ native plugin. We use the C++11 standard for our project, built with CMake 3.14 and MS Visual Studio Community 2015. We tested the implementation with VTK 8.1, 8.1.2 and 9.0.2 to test its version-agnosticism, and Unity 2019.3.5f1, under Windows 10.
+
+% TODO: add the specifications of the Lab's PC
+The environment runs on a workstation built with an Intel i5-, NVidia RTX 3080 and 16 GB of GDDR4 RAM. We used a first generation HTC Vive HMD to test the scenes, which has a 90 Hz refresh rate with a combined 2160x1200 pixels. For the tests we used a density dataset file provided by Boston University Tech in a 2008 workshop on Paraview\footnote{Available online at \url{https://www.bu.edu/tech/support/research/training-consulting/presentations/visualizationworkshop08/}.}. 
+
+We track performances using a C\# script in the Unity editor called through a static object loader that dumps the FPS count every second into a log file. We then process the file in order to produce the following information from the data: the FPS distribution, maximum, minimum, mean and median values. We compare the results with the recommended values from Unity and HTC. We repeat these tests for the two scenes at differening distances from the user and executing delayed updates of the objects in the scene to see how these updates impact the user experience.
+
+The experiments are composed of one scene where a cone is rendered through a \verb|vtkConeSource| and its parameters adjusted so to have a higher resolution. with a delay of 1 second, the height of the cone is changed, and with a delay of 2 seconds its radius and capping are too. A second scene is composed of a \verb|vtkStreamTracer| generated from the density dataset. Because of the chosen dataset, the rendered object is offset from its Unity object, which we could not fix. The stream tracer starts with a low count of source points, and after 4 seconds this number is increased.
+
+On top of these more automated tests, we run in the same scenes some manual testing, to test the ability to move around and test whether this impairs the performance of the environment. These tests use the same scenes as above, but do not dump FPS data automatically, rather we check whether the scenes cause motion sickness, eye strain or generate glitches or unpleasent effects, as well as to test the smoothness of the camera and movements of the user.
+
+\section{Tests}
 

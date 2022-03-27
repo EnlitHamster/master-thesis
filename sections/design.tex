@@ -121,7 +121,7 @@ A complete description of the formatting values see Table~\ref{tab:format-values
 
 \subsubsection{Benefits and Limitations}
 
-The obvious benefit of this implementation is that it allows us to broadly achieve VTK-completeness in our system. The Python component gives the plugin access to the \verb|vtkAlgorithm| classes, and through piped calls to VTK it is possible to implement virtually any visualization a native application could make. The Introspector can instantiate all the necessary VTK objects using the \verb|genericCall| at Python level and as such it could potentially make the system strictly VTK complete. However, this would come at a great cost in terms of computation time, as all the information available for the \verb|vtkAlgorithm| classes is not generated.
+The obvious benefit of this implementation is that it allows us to broadly achieve VTK-completeness in our system. The Python component gives the plugin access to the \verb|vtkAlgorithm| classes, and through piped calls to VTK it is possible to implement virtually any visualization a native application could make.
 
 A more subtle benefit of the usage of Python is that it is an interpreted language, and the interpreter being embedded in the C++ code makes it easier to maintain and expand the Introspector capabilities. Changes to such parts of the introspection layer would not require the plugin to be re-built everytime, whereas any change to the C++ code requires the plugin to be built and deployed in the Unity environment again. Furthermore, Python being a high level language, the actual implementation becomes more readable and understandable, making the component easier to work on.
 

@@ -74,7 +74,7 @@ We use as base for our software Wheeler's VtkToUnity plugin, as such we use the 
 
 \subsection{VTK Completeness}
 
-As already introduced, we aim at fully exposing VTK's functionality to the Unity environment. More formally, we define VTK completeness as the characteristic of an environment that is able to access the full extent of the VTK library, whether it was or not built with its optional modules, and can produce the same visualizations or more that a native C++ application using VTK would be able to. 
+As already introduced, we aim at fully exposing VTK's functionality to the Unity environment. More formally, we define VTK completeness as the characteristic of an environment that is able to access the full extent of the VTK library, whether it was or not built with its optional modules, and can produce the same visualizations as a native C++ application using VTK would be able to. 
 
 In order to achieve such a property, we either generate adapters for all possible software components of VTK that are to be exposed, or we design a system that is able to generically access this information at runtime. As the first makes the system more coupled to the version of VTK with which it is built, and as such adapters are to be generated every time the system is built, it hardly fits our requirements. Thus, we choose to use introspection as our access system to the features of VTK.
 
@@ -82,7 +82,7 @@ As our system uses a C++ plugin to integrate VTK and Unity, and this language do
 
 Using solutions that would modify the C++ compiler are also not of our interest as they introduce a very tight coupling with the modificiations in place, and potential for unexpected breaking points down the development process that would not be easily traceable back to these modifications. For these reasons we see these solutions as non-starters for our project. Thus, we need to introduce introspection through a further module.
 
-Instead, our approach aims to integrate Dreuning's Python introspection scripts \cite{dreuning_visual_2016} within the C++ native plugin, as this would still allow for a performing system written in C++ to access Python's capabilities when it is necessary to expose parts of \acrshort{vtk} the system. The solution presented by Dreuning is able to achieve decent performances in Python, and has the characteristics we need.
+Our approach aims to integrate Dreuning's Python introspection scripts \cite{dreuning_visual_2016} within the C++ native plugin, as this would still allow for a performing system written in C++ to access Python's capabilities when it is necessary to expose parts of \acrshort{vtk} the system. The solution presented by Dreuning is able to achieve decent performances in Python, and has the characteristics we need.
 
 \subsection{Integrating C++ and Python}
 
