@@ -5,6 +5,19 @@ In Chapter~\ref{ch:results}, we introduced our validation of our design and our 
 
 \section{Expectations met}
 
+Our software is capable of visualizing and editing in real time VTK objects without significant losses in performance. The overall design works reliably in instantiating, accessing and updating VTK objects and can be easily used alongside Unity.
+
+% TODO: add unity releases
+We built and ran the code in several VTK versions (8.1.0, 8.1.2, 8.2.0, 9.1.0) without hicups, and we were also able to run the plugin with two different releases of Unity. The ability to access any VTK object works seemlessly.
+
+Alongside its versatility and version agnosticism, the system achieves the desired performances. During the manual tests, we did not experience lag or motion sickness and the environment rendering appeared smooth, without artefacts and anomalies. The little interactivity introduced through Unity managed level allowed us to explore different distances and scales of rendering the VTK objects, that did not impare the usage of the system.
+
+Overall, the state of the plugin shows that the creation of the system we envision is possible and that the possible bottlenecks we foresaw in the beginning of the project were either not an issue or could be overcome.
+
+Finally, a final shortcoming of our software lays in its maintainability. Although the different modules composing our architecture can be considered as separate, most of them still depend on either Unity or VTK. While for the first one this is pretty much scoped down already in the API definition and routing, this cannot be said for the second as infrastructure layer, Introspector and adapters all depend on VTK. Ideally, the infrastructure layer should be de-coupled from the library.
+
+However, we are not certain this is desirable, as doing so could could lead to further overheads and complecity in the system. Considering that the use-cases for our plugin entail the need for high performances and lightweight code, we believe that this is not an urgent matter and that this issue is mitigated by the fact that these are not tight couplings and only depend on the which library Introspector and Adapters are working with.
+
 \section{Shortcomings}
 
 %In this chapter, we discuss the results of our experiment(s) on ...
@@ -15,6 +28,14 @@ In Chapter~\ref{ch:results}, we introduced our validation of our design and our 
 %\end{finding}
 
 %Refer to Finding~\ref{find:important1}.
+
+The main shortcomings that our software presents compared to our objectives lay in the limitations of the Introspector module and in the technical barrier for the usage of the software.
+
+The Introspector module is not able to fully expose a quick access system to VTK, as only the VTK objects are loaded at instantiation, while a lot of the utilities are not. However, this is a temporary limitation due to the necessity to expand on the Introspector module. This is out of the scope of this thesis, as such work relies on known technologies and approaches, but requires further analysis of the VTK package and is material for a different thesis.
+
+This being said, it still limits the capabilities of the software, which for now are expanded through a workaround, allowing the our plugin to directly access the introspection feature of Python. This is however not ideal, as it introduces a non-trivial overhead in the loading of the symbols in runtime, and should thus be avoided as much as possible.
+
+The second main issue relates to the technical barrier. Although we have reduced the technical skills required to approach the development of VTK visualizations in Unity for VR, this was not to the extent of our expectations. The managed level interface still requires the user to carefully specify the types of the parameters passed and does not do much in the sense of error handling.
 
 \section{Threats to validity}
 %What could affect the validity of your research? Think of pitfalls of your research method, experimental setup, interpreting the results.
@@ -27,4 +48,8 @@ Furthermore, the Python Introspector loads most information and instantiation, t
 
 When it comes to our validation, our experiments do not cover all the array of uses of our software. Furthermore, we tested performances without factoring in the interactiveness of the environment we envision. However, we presented an engine which is able to reach the desired performances and enables further research into the creation of a VR visualization development environment. If performances should not reach the necessary thresholds for bigger projects, there is ample room for improvement.
 
-Also, our solution is parallel and distribution ready, allowing to use these technologies for performance boosts which are non-trivial. We believe that, as a preliminary research in the creation of such a complex environment, we already demonstrated that visualization and \acrshort{vr} technologies are mature enough to start the creation of these environments, and with our implementation we filled an important gap. On top of this, our solution is not exclusively aimed to such an environment as the one we envision, and can be used for multiple development projects, and we believe it will help standardize the VR visualization development landscape by catering to the multiple needs the community has.
+Also, our solution can leverage fully the modules of VTK, allowing usage of parallel and distributed rendering of VTK objects. We believe that, as a preliminary research in the creation of such a complex environment, we already demonstrated that visualization and \acrshort{vr} technologies are mature enough to start the creation of this environments, and with our implementation we filled an important gap. On top of this, our solution is not exclusively aimed to such an environment as the one we envision, and can be used for multiple development projects, and we believe it will help standardize the VR visualization development landscape by catering to multiple needs of the community.
+
+Another threat to the validity of our project are the results of the tests. Although in general they show our solution to reach its goals, some anomalies exist that we can only partly explain. These anomalies seem rare but could influence the experience of the user. We will discuss future steps to investigate and solve these issues in Chapter~\ref{ch:conclusion}, however we acknowledge that in the current state the software could present unpredictable and disruptive behaviour.
+
+Finally, a known bug exists in the code due to which an OpenGL error occurs. This does not influence the usage of the system, as it was possible to use it. However, this may be a hint towards explaining some of the issues that arose during the tests and must be anyways investigated in order to achieve a reliable and usable software.

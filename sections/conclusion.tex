@@ -1,7 +1,29 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
+We have developed a fully functional coding environment that allows users to easily integrate VTK and Unity for visualization development. Furthermore, our system is already able to uphold VR performance and usability standards. As such, it is capable of supporting VR environments and thus ready as an engine for an immersive VR visualization development environment.
 
+Our design enabled our code to be maintainable and modular, making it easier to scope changes to the system and investigate bugs and issues. The ability to switch between native C++ code and the Python interpreter allows our system to fully leverage VTK's features without losing the ability of reaching high performances.
+
+Analysing to previous implementations we were able to determine threats to the maintainability and usability of our software long-term. Such threats mainly relating to the usage of deprecated libraries, development of monolithic software and heavy reliance on particular versions of the libraries or frameworks used. Compared to these, the system is capable of reaching the same performances while fully exposing the API of VTK to the user in a well supported, maintained and known environment such as Unity.
+
+The new approach proposed to create such integration is not dependant on a particular library or engine used. As such, we argue our architecture is agnostic of which are used, and can be easily used with different ones, still retaining the advantages presented in Chater~\ref{ch:design}.
+
+Considering the state of the art today, we have presented a first iteration of an architecture for visualization libraries and game engines that can be easily reproduced and used for VR environments. Furthermore, we have presented an implementation of such an architecture that achieves the requirements for an immersive VR visualization development environment, which can already be used by the VR community for the development of integrated applications.
 
 \section{Future work}
 \label{sec:future_work}
+
+The development of our environment is still in progress. The system presents some obvious shortcomings that need to be addressed in followup research. Starting with the limitations of the Introspector.
+
+The python module lacks the ability of fully mapping and loading the VTK library. A preliminary attempt to simply reproduce the approach \cite{dreuning_visual_2016} already used failed due to cyclic dependencies inside the class tree. As such, a more sophisticated approach should be developed.
+
+Alongside this, the access to the Introspector should be more carefully controlled in the C++ native code, limiting how the C\# managed plugin can access it. Considering the overhead that symbol loading presents, allowing users to generically access this feature is not ideal, as non expert users could abuse such feature, resulting in performance issues. Also, such feature should not be necessary nor desirable, as the system should expose the full API without the need of shortcuts.
+
+Furthermore, a number of anomalies have been detected during tests, in particular FPS and performance drops that were barely percivable inside the environment, that could though hinder the user experience; and the presence of a known bug that results in OpenGL errors at each frame. These could potentially be linked and as such further investigation should be carried out.
+
+Unfortunately, our preliminary attempts to scoping down which component caused our system to throw the error failed, however we believe it lays in the actual rendering and the updating of the scene objects, as we amply tested the second without any success in finding the bug.
+
+The performance issues may be caused by external factors, and we believe further testing should be carried out, especially to ensure the system is usable by less technically trained users, representing the more wide VR visualization development community, as well as to explore the capabilities of the software with more complex and interesting visualizations.
+
+Finally, the development of the UI components presented in Chapter~\ref{ch:design} is still to be tackled. We proposed a way of implementing such components that would mirror the agnosticism, versatility and usability of the integration. We believe that creating such a modular system would allow users to more precisely tailor the experience to their needs and as such we believe that such a research route should be explored.

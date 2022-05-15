@@ -784,4 +784,97 @@ In the following pages, we present the API of different parts of the library, in
 	\end{longtable}
 \end{landscape}
 
+\chapter{Unity test scenes}
+\label{apx:unity-test-scenes}
+
+This chapter presents the relevant code used to create the scenes used to validate the presented plugin.
+
+\begin{figure}[ht!]
+    \centering
+    \begin{cs}[label=lst:ConeTestVtkInst,caption={C\# calls to create a VTK cone source in Unity (Snippet a) and to update it through a co-routine (Snippet b)}]
+/* SNIPPET A */
+// Create a backend VTK object through the Introspector.
+int id = VtkToUnityPlugin.VtkResource_CallObject("vtkConeSource");
+
+// Set its attributes.
+VtkUnityWorkbenchPlugin.SetProperty(id, "Height", "f", 0.1f.ToString());
+VtkUnityWorkbenchPlugin.SetProperty(id, "Radius", "f", 0.1f.ToString());
+VtkUnityWorkbenchPlugin.SetProperty(id, "Resolution", "d", 200.ToString());
+
+// Directly connect the source to an actor in the backend.
+VtkToUnityPlugin.VtkResource_AddActor(id, colour, false);
+
+/* SNIPPET B */
+// Defines the parameters of the Cone source for updating
+struct Preset
+{
+    public float Height;
+    public float Radius;
+    public int Resolution;
+}
+
+// Determines which preset to use
+private bool useDefault = true;
+private Preset defaultPreset = new Preset();
+private Preset transformedPreset = new Preset();
+
+// Co-routine to be run alongside the updates to simulate real-time editing
+IEnumerator TransformCone()
+{
+    for(;;)
+    {
+        // Changes all cones on the scene and yield again in 2 seconds
+        foreach (var idPosition in _shapeIdPositions)
+        {
+            Preset p = useDefault ? defaultPreset : transformedPreset;
+            int id = idPosition.Id;
+            VtkUnityWorkbenchPlugin.SetProperty(id, "Height", "f", p.Height.ToString());
+            VtkUnityWorkbenchPlugin.SetProperty(id, "Radius", "f", p.Radius.ToString());
+            VtkUnityWorkbenchPlugin.SetProperty(id, "Resolution", "d", p.Resolution.ToString());
+
+        }
+        useDefault = !useDefault;
+        yield return new WaitForSeconds(2.0f);
+    }
+}
+    \end{cs}
+\end{figure}
+
+\begin{figure}[ht!]
+    \centering
+    \begin{cs}[label=lst:StremTracerVtkInst,caption={C\# calls to create a VTK stream tracer in Unity.}]
+// Creating the VTK resources
+int reader = VtkToUnityPlugin.VtkResource_CallObject("vtkStructuredGridReader");
+int seeds = VtkToUnityPlugin.VtkResource_CallObject("vtkPointSource");
+int streamer = VtkToUnityPlugin.VtkResource_CallObject("vtkStreamTracer");
+int outline = VtkToUnityPlugin.VtkResource_CallObject("vtkStructuredGridOutlineFilter");
+
+VtkToUnityPlugin.VtkResource_SetAttrFromString(reader, "FileName", "s", "Data/density.vtk");
+VtkToUnityPlugin.VtkResource_CallMethodAsVoid(reader, "Update", "", IntPtr.Zero);
+
+string center = VtkToUnityPlugin.VtkResource_CallMethodPipedAsString(
+    reader,
+    2,
+    2,
+    VtkUnityWorkbenchHelpers.MarshalStringArray(new string[] { "GetOutput", "GetCenter" }),
+    VtkUnityWorkbenchHelpers.MarshalStringArray(new string[] { "", "" }),
+    IntPtr.Zero);
+
+VtkToUnityPlugin.VtkResource_SetAttrFromString(seeds, "Radius", "f", 3.0f.ToString());
+VtkToUnityPlugin.VtkResource_SetAttrFromString(seeds, "Center", "f3", center);
+VtkToUnityPlugin.VtkResource_SetAttrFromString(seeds, "NumberOfPoints", "d", nPoints.ToString());
+
+VtkToUnityPlugin.VtkResource_Connect("Input", reader, streamer);
+VtkToUnityPlugin.VtkResource_Connect("Source", seeds, streamer);
+VtkToUnityPlugin.VtkResource_SetAttrFromString(streamer, "MaximumPropagation", "d", 100.ToString());
+VtkToUnityPlugin.VtkResource_SetAttrFromString(streamer, "InitialIntegrationStep", "f", 0.1f.ToString());
+VtkToUnityPlugin.VtkResource_CallMethodAsVoid(streamer, "SetIntegrationDirectionToBoth", "", IntPtr.Zero);
+
+VtkToUnityPlugin.VtkResource_Connect("Input", reader, outline);
+
+VtkToUnityPlugin.VtkResource_AddActor(streamer, colour, false);
+VtkToUnityPlugin.VtkResource_AddActor(outline, colour, false);
+    \end{cs}
+\end{figure}
+
 \end{appendices}
