@@ -17,7 +17,7 @@ The results from these tests should validate in part our performance requirement
 
 Nonetheless, we will perform a stress test with an increasing number of objects to complete the discussion. This test will not be run in a VR environment, considering that, if significant differences are found between the two, we can already account for that comparing these results with the previous two.
 
-Finally, we run some tests with and without adapters for the used objects, in order to take into account the overhead of accessing the introspection layer. These tests will not be run inside a VR environment as they are used as validation for our results from Chapter~\ref{ch:rqrmsandclngs}, and thus it is not important in which environment is run.
+% Finally, we run some tests with and without adapters for the used objects, in order to take into account the overhead of accessing the introspection layer. These tests will not be run inside a VR environment as they are used as validation for our results from Chapter~\ref{ch:rqrmsandclngs}, and thus it is not important in which environment is run.
 
 We expect our tests to show that the scenes using the introspection layer are indeed slower, heavier or both compared to previous solutions. However, we also expect it to yield a usable environment and as such achieve our objective of developing a powerful enough engine to support general purpose VR visualization development environments. We also expect there to be a significant difference in the execution times compared to the native runs from Chapter~~\ref{ch:rqrmsandclngs}, as we introduce delay both in accessing \acrshort{vtk} and with Unity's rendering cycle. However, seeing as the execution times from the native tests were promising, we expect this not to be an issue.
 
@@ -45,7 +45,7 @@ With the Cone source scene, we aim at confirming our environment works well at r
 
 From our manual tests, the scene appeared well rendered, the updates to the VTK object did not cause lag to the rotation or the rendering of the object, no glitches or artefacts were generated that were not expected, and the experience within the environment felt smooth. The data collected by the scripts further confirms the first-hand experience, as is visible in Figure~\ref{fig:cone-with-updates-analysis}.
 
-In order to understand the graphs, below are the relevant information from the dataset. In particular, the execution of the test lasted for circa 41 seconds. Table~\ref{tab:cone-with-updates-description} relays the rest of the data. As visible, the values validate our design. The system reaches on average and most of the time the objective FPS values, in particular staying stable around 89.0 FPS.
+In order to understand the graphs, below are the relevant information from the dataset. In particular, the execution of the test lasted for circa 83 seconds. Table~\ref{tab:cone-with-updates-description} relays the rest of the data. As visible, the values validate our design. The system reaches on average and most of the time the objective FPS values, in particular staying stable around 89.0 FPS.
 
 Although this value is not exactly 90 FPS, as would be most desirable, considering the possible rounding error and that these values get dumped as integer values, it is likely that those values approached closely 90 FPS and thus we believe that error accounts for this difference.
 
@@ -57,13 +57,13 @@ What is surprising to see, is the minimum of 2 FPS and quite a large standard de
         \centering
         \begin{tabulary}{\textwidth}{LR}
             \multicolumn{2}{c}{\textbf{FPS metrics}}       \\ \hline
-            Count              & 3498             \\
+            Count              & 7405             \\
             Max                & 99               \\
             Min                & 2                \\
-            Mean               & 87.4379          \\
+            Mean               & 87.7627          \\
             Median             & 89.0             \\
-            Standard deviation & 8.1466           \\
-            5th percentile     & 84.0             \\
+            Standard deviation & 3.1823           \\
+            5th percentile     & 88.0             \\
             25th percentile    & 89.0             \\
             50th percentile    & 89.0             \\
             75th percentile    & 89.0            
@@ -74,12 +74,12 @@ What is surprising to see, is the minimum of 2 FPS and quite a large standard de
         \centering
         \begin{tabulary}{\textwidth}{LR}
             \multicolumn{2}{c}{\textbf{FPS metrics processed}}       \\ \hline
-            Count              & 3283             \\
-            Max                & 95               \\
-            Min                & 71               \\
-            Mean               & 88.8197          \\
+            Count              & 7172             \\
+            Max                & 92               \\
+            Min                & 86               \\
+            Mean               & 88.9769          \\
             Median             & 89.0             \\
-            Standard deviation & 1.4482           \\
+            Standard deviation & 0.5110           \\
             5th percentile     & 88.0             \\
             25th percentile    & 89.0             \\
             50th percentile    & 89.0             \\
@@ -123,17 +123,13 @@ With these considerations, we analyse again the dataset and produce new results 
 
 The amount of time \textit{shaved off} the beginning of the dataset represents the loading time of the software that we do consider for runtime analysis. Furthermore, the missing FPS drops are the outliers in the collected metrics, which amount to 57 frames in total not considered over the 3498 of the entire test (1.63\%). The standard deviation and the mean values also show the app executes as expected under normal load.
 
-After analysing the profiling data, we notice that some of the operations take exceedingly long to execute. In the data we collected, it appears to be always the first operation being called during the co-routine. However, there are only two of such outliers, and we can not trace back this issue to any specific reason. If we take these times as correct, it means that some operations may even take 30 to 50 updates to actually complete.
-
-By comparing the moments when these spikes happen and the chart of the FPS, we can deduce that those two probably have the same root causes, as they happen in the same interval where FPS dropped the most. As such, we consider those as outliers in the normal operations of the plugin, but will go deeper on the issue in Chapter~\ref{ch:conclusion}.
-
-The overlapping graphs can be seen in Figure~\ref{fig:overlapping-cone-source-graphs}, where the execution frame of the given value has been computed taking into account each update executes 2 seconds after the previous has terminated (estimated at 180 frames as the error is neglectable). The red vertical lines indicate a high execution time for the operation, which almost perfectly correspond to the two biggest FPS drops.
+We can see both from analysing the profiling data and the FPS that there are some anomalies causing FPS drops and slower operations than expected. The overlapping graphs can be seen in Figure~\ref{fig:overlapping-cone-source-graphs}, where the execution frame of the given value has been computed taking into account each update executes 2 seconds after the previous has terminated (estimated at 180 frames as the error is neglectable). We can see that there is some similarities in the moments when these anomalies where detected, however not enough to hint to an issue with our system.
 
 The remaining values from the profiling are slightly higher than those obtained in Chater~\ref{ch:rqrmsandclngs} for the C++ with Python introspection, but this is as expected and as such validating our results. In particular, it appears it would be acceptable to update a VTK object around 5 to 10 times per frame, which would in total mean between 450 to 900 operations per second. We believe these values could be improved on, but are already an acceptable result.
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\textwidth]{pictures/analysis cone/output_20_0.png}
+    \includegraphics[width=\textwidth]{pictures/analysis cone/output_19_1.png}
     \caption{Overlapping graphs showing the drops in FPS coincide with spikes in computation time of VTK operations.}
     \label{fig:overlapping-cone-source-graphs}
 \end{figure}
@@ -223,7 +219,7 @@ More interesting is the 1000 points rendering. The distribution of the FPS is mo
 
 Taking the profiling into account, we can see that the updating operations called on the objects do not take significant amounts of time, with a maximum of just below 0.4 ms. Considering these results, and the weight of the rendering itself, we believe these to be promising results, however they show further work in optimisation is required in order to produce a well rounded system.
 
-The datasets' descriptions are visible in Table~\ref{tab:stream-tracer-1000-dataset}, while Figure~\ref{fig:stream-tracer-1000-analysis} shows the graphs said datasets. Furthermore, Figure~\ref{fig:stream-tracer-1000-profiling} shows the profiling data from this scene. It is important to note two things: first, the first graph does not contain both the update operations called every frame on the stream tracer, neither the first update on the reader object, as its value would make all other values unreadable; second, all the values show that the operations ran by our plugin take considerably little time, and as such we believe most of the lag is caused by optimisations needed at the Unity managed level.
+The datasets' descriptions are visible in Table~\ref{tab:stream-tracer-1000-dataset}, while Figure~\ref{fig:stream-tracer-1000-analysis} shows the graphs said datasets. Furthermore, Figure~\ref{fig:stream-tracer-1000-profiling} shows the profiling data from this scene. It is important to note two things: first, the first graph does not contain both the update operations called every frame on the stream tracer, neither the first update on the reader object, as its value would make all other values unreadable; second, all the values show that the operations ran by our plugin take considerably little time, and as such we believe most of the lag is caused by optimisations needed at the Unity managed level. The removed values are 0.2771s and 0.2768s for the 100 and 1000 points tests respectively.
 
 As visible from the comparison of profiling data, even though the second scene has a tenfold increase in the amount of points used for generating the stream tracer, times of generation and update are almost identical, evidence of the fact that the system's bottleneck is the Unity managed level and not our engine. We will discuss further root cause investigation in Chapter~\ref{ch:conclusion}.
 
@@ -233,16 +229,16 @@ As visible from the comparison of profiling data, even though the second scene h
         \centering
         \begin{tabulary}{\textwidth}{LR}
             \multicolumn{2}{c}{\textbf{FPS metrics}}       \\ \hline
-            Count              & 3673             \\
-            Max                & 105              \\
+            Count              & 8983             \\
+            Max                & 101              \\
             Min                & 2                \\
-            Mean               & 88.9295          \\
-            Median             & 91.0             \\
-            Standard deviation & 9.4051           \\
-            5th percentile     & 70.0             \\
-            25th percentile    & 90.0             \\
-            50th percentile    & 91.0             \\
-            75th percentile    & 93.0            
+            Mean               & 88.9054          \\
+            Median             & 90.0             \\
+            Standard deviation & 6.5988           \\
+            5th percentile     & 75.0             \\
+            25th percentile    & 89.0             \\
+            50th percentile    & 90.0             \\
+            75th percentile    & 92.0            
         \end{tabulary}
         \caption{}
     \end{subtable}
@@ -250,16 +246,16 @@ As visible from the comparison of profiling data, even though the second scene h
         \centering
         \begin{tabulary}{\textwidth}{LR}
             \multicolumn{2}{c}{\textbf{FPS metrics processed}}       \\ \hline
-            Count              & 3492             \\
-            Max                & 105              \\
-            Min                & 65               \\
-            Mean               & 89.7483          \\
-            Median             & 91.0             \\
-            Standard deviation & 7.1231           \\
-            5th percentile     & 70.0             \\
-            25th percentile    & 90.0             \\
-            50th percentile    & 91.0             \\
-            75th percentile    & 93.0            
+            Count              & 8683             \\
+            Max                & 101              \\
+            Min                & 72               \\
+            Mean               & 89.5098          \\
+            Median             & 90.0             \\
+            Standard deviation & 4.8100           \\
+            5th percentile     & 84.0             \\
+            25th percentile    & 89.0             \\
+            50th percentile    & 90.0             \\
+            75th percentile    & 92.0            
         \end{tabulary}
         \caption{}
     \end{subtable}
@@ -295,16 +291,7 @@ As visible from the comparison of profiling data, even though the second scene h
 
 \begin{figure}
     \centering
-    \begin{subfigure}{.9\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{pictures/analysis stream tracer 1000/output_18_1.png}
-        \caption{}
-    \end{subfigure}
-    \begin{subfigure}{.9\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{pictures/analysis stream tracer 1000/output_17_1.png}
-        \caption{}
-    \end{subfigure}
-    \caption{The comparison of time taken by the 100 and 1000 points stream tracers to load (a) and the distribution of update times of both (b).}
+    \includegraphics[width=.9\textwidth]{pictures/analysis stream tracer 1000/output_18_1.png}
+    \caption{The comparison of time taken by the 100 and 1000 points stream tracers to load.}
     \label{fig:stream-tracer-1000-profiling}
 \end{figure}
